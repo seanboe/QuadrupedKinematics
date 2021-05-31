@@ -135,7 +135,7 @@ void Kinematics::solveYMove(int16_t inputY, int16_t inputZ, float *demandAngle1,
   *yPlaneZOutput = sqrt(pow((float)abs(demandFtShldrLength), 2) - pow((float)abs(LIMB_1), 2));
 
   // Here, theta is the angle closest to the axis of rotation in the triangle relating inputY and inputZ
-  // Alpha is the angle closest to the axis of rotation in the traingle relating leg length output to LIMB_1 length
+  // Alpha is the angle closest to the axis of rotation in the triangle relating leg length output to LIMB_1 length
   float theta = (float)abs((((float)atan((float)inputY/(float)inputZ) * 180) / PI));
   float alpha = (float)(((float)acos((float)LIMB_1/demandFtShldrLength) * 180) / PI);
   if (inputY >= 0) {
@@ -156,7 +156,7 @@ void Kinematics::solveFootPosition(int16_t inputX, int16_t inputY, int16_t input
   float demandAngle2 = 0;
   float demandAngle3 = 0;
 
-  float yPlaneZOutput = 0;  // this is the foot-shoulder distance on the y-z plane (L1 in diagram)
+  float yPlaneZOutput = 0;  // this is the foot-shoulder distance on the y-z plane (L1 in diagram), and the distance the leg must stretch to achieve the desired y movement on the y-z plane. 
   float demandFtShldrLength = 0;  // this is the foot-should distance on the x-z plane and the final calculated length
 
   solveYMove(inputY, inputZ, &demandAngle1, &yPlaneZOutput);
