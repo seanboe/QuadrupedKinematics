@@ -7,28 +7,25 @@ Kinematics::Kinematics(uint8_t legID, int16_t inputX, int16_t inputY, int16_t in
 
 
   // This solves for the motor angles in degrees and micros
-  solveFootPosition(inputX, inputY, inputZ);
+  solveFootPosition(inputX, inputY, inputZ, &motor1.angleDegrees, &motor2.angleDegrees, &motor3.angleDegrees);
 
-  // motor setup
+  motor1.angleMicros = _degreesToMicros(motor1.angleDegrees, motor1CalibOffset);
+  motor1.angleDegrees = motor1.dynamicDegrees;
+  motor1.dynamicMicros = _degreesToMicros(motor1.dynamicDegrees, motor1CalibOffset);
   motor1.previousDegrees = 360;         // 360 is a magic number. It just must be different than the start positions so that a call to updateDynamicPositions() works
   motor1.calibOffset = motor1CalibOffset;
 
-  motor2.previousDegrees = 360;
+  motor2.angleMicros = _degreesToMicros(motor2.angleDegrees, motor2CalibOffset);
+  motor2.angleDegrees = motor2.dynamicDegrees;
+  motor2.dynamicMicros = _degreesToMicros(motor2.dynamicDegrees, motor2CalibOffset);
+  motor2.previousDegrees = 360;         // 360 is a magic number. It just must be different than the start positions so that a call to updateDynamicPositions() works
   motor2.calibOffset = motor2CalibOffset;
 
-  motor2.previousDegrees = 360;
+  motor3.angleMicros = _degreesToMicros(motor3.angleDegrees, motor3CalibOffset);
+  motor3.angleDegrees = motor3.dynamicDegrees;
+  motor3.dynamicMicros = _degreesToMicros(motor3.dynamicDegrees, motor3CalibOffset);
+  motor3.previousDegrees = 360;         // 360 is a magic number. It just must be different than the start positions so that a call to updateDynamicPositions() works
   motor3.calibOffset = motor3CalibOffset;
-
-  dynamicMotor1Angle.go(motor1.angleMicros);
-  dynamicMotor2Angle.go(motor2.angleMicros);
-  dynamicMotor3Angle.go(motor3.angleMicros);
-
-  _endpointX = inputX;
-  _previousEndpointX = inputX;
-  _endpointY = inputY;
-  _previousEndpointY = inputY;
-  _endpointZ = inputZ;
-  _previousEndpointZ = inputZ;
 
   dynamicX.go(inputX);
   dynamicY.go(inputY);
@@ -47,69 +44,9 @@ uint16_t Kinematics::_degreesToMicros(uint8_t inputDegrees, uint8_t calibOffset)
 
 // *****************Public Functions*****************
 
+void Kinematics::setFootEndpoint(int16_t inputX, int16_t inputY, int16_t inputZ) {
 
-// Get Dynamic angle gets an interpolated angle measurement. If you only care about the motors all stopping at the same time, use this.
-// Alternatively, use the setFootEndpoints, updateDynamicFootPositions route. This sets an endpoint for the x, y, and z lengths and interpolates
-// across each length, recalculating angles every time to verify that all changes are linear. 
-// Interpolating across angles will probably be deprecated soon; it will be useless since its goal will be fulfilled by interpolating x, y, and z. 
-// Additionally, it has an inherent problem, which is why an alternative is needed. 
-
-void Kinematics::updateDynamicAngleEndpoint() {
-
-  uint16_t motor1AngleDelta = abs(motor1.angleDegrees - motor1.previousDegrees);
-  uint16_t motor2AngleDelta = abs(motor2.angleDegrees - motor2.previousDegrees);
-  uint16_t motor3AngleDelta = abs(motor3.angleDegrees - motor3.previousDegrees);
-  uint16_t demandTime = lrint(MAX_SPEED_INVERSE * max(max(motor1AngleDelta, motor2AngleDelta), motor3AngleDelta));
-
-
-    // determine whether motor angles have been updated i.e. new end angle, and update final positions accordingly
-  if (motor1.previousDegrees != motor1.angleDegrees) {
-    motor1.previousDegrees = motor1.angleDegrees;
-    dynamicMotor1Angle.go(motor1.angleDegrees, demandTime, LINEAR, ONCEFORWARD);
-  }
-  if (motor2.previousDegrees != motor2.angleDegrees) {
-    motor2.previousDegrees = motor2.angleDegrees;
-    dynamicMotor2Angle.go(motor2.angleDegrees, demandTime, LINEAR, ONCEFORWARD);
-  }
-  if (motor3.previousDegrees != motor3.angleDegrees) {
-    motor3.previousDegrees = motor3.angleDegrees;
-    dynamicMotor3Angle.go(motor3.angleDegrees, demandTime, LINEAR, ONCEFORWARD);
-  }
-};
-
-
-
-uint16_t Kinematics::getDyamicAngle(motorID motorID, unitType unit) {
-  
-  // update the dynamic endpoint in case there is a new demand endpoint
-  updateDynamicAngleEndpoint();
-
-  if (motorID == M1) {
-      if (unit == DEGREES)
-        return dynamicMotor1Angle.update();
-      else if (unit == MILLIS)
-        return _degreesToMicros(dynamicMotor1Angle.update(), motor1.calibOffset);
-  }
-  else if (motorID == M2) {
-    if (unit == DEGREES)
-      return dynamicMotor2Angle.update();
-    else if (unit == MILLIS)
-      return _degreesToMicros(dynamicMotor2Angle.update(), motor2.calibOffset);
-  }
-  else if (motorID == M3) {
-    if (unit == DEGREES)
-      return dynamicMotor3Angle.update();
-    else if (unit == MILLIS)
-      return _degreesToMicros(dynamicMotor3Angle.update(), motor3.calibOffset);
-  }
-  return _degreesToMicros(90, 0);       // this should never happen, but if necessary, return 90 degrees (safe value for all motors)
-};
-
-
-
-void Kinematics::setFootEndpoint(int16_t endpointX, int16_t endpointY, int16_t endpointZ) {
-
-  solveFootPosition(endpointX, endpointY, endpointZ);
+  solveFootPosition(inputX, inputY, inputZ, &motor1.angleDegrees, &motor2.angleDegrees, &motor3.angleDegrees);
 
   uint16_t motor1AngleDelta = abs(motor1.angleDegrees - motor1.previousDegrees);
   uint16_t motor2AngleDelta = abs(motor2.angleDegrees - motor2.previousDegrees);
@@ -123,21 +60,19 @@ void Kinematics::setFootEndpoint(int16_t endpointX, int16_t endpointY, int16_t e
     motor2.previousDegrees = motor2.angleDegrees;
     motor3.previousDegrees = motor3.angleDegrees;
 
-    dynamicX.go(endpointX, demandTime, LINEAR, ONCEFORWARD);
-    dynamicY.go(endpointY, demandTime, LINEAR, ONCEFORWARD);
-    dynamicZ.go(endpointZ, demandTime, LINEAR, ONCEFORWARD);
+    dynamicX.go(inputX, demandTime, LINEAR, ONCEFORWARD);
+    dynamicY.go(inputY, demandTime, LINEAR, ONCEFORWARD);
+    dynamicZ.go(inputZ, demandTime, LINEAR, ONCEFORWARD);
   }
 }
 
 void Kinematics::updateDynamicFootPosition() {
 
-  solveFootPosition(dynamicX.update(), dynamicY.update(), dynamicZ.update());
-
+  solveFootPosition(dynamicX.update(), dynamicY.update(), dynamicZ.update(), &motor1.dynamicDegrees, &motor2.dynamicDegrees, &motor3.dynamicDegrees);
+  motor1.dynamicMicros = _degreesToMicros(motor1.dynamicDegrees, motor1.calibOffset);
+  motor2.dynamicMicros = _degreesToMicros(motor2.dynamicDegrees, motor2.calibOffset);
+  motor3.dynamicMicros = _degreesToMicros(motor3.dynamicDegrees, motor3.calibOffset);
 }
-
-
-
-
 
 
 void Kinematics::solveFtShldrLength(float demandFtShldr, float *demandAngle2, float *demandAngle3) {
@@ -196,7 +131,7 @@ void Kinematics::solveYMove(int16_t inputY, int16_t inputZ, float *demandAngle1,
 }
 
 
-void Kinematics::solveFootPosition(int16_t inputX, int16_t inputY, int16_t inputZ) {
+void Kinematics::solveFootPosition(int16_t inputX, int16_t inputY, int16_t inputZ, uint16_t *motor1AngleP, uint16_t *motor2AngleP, uint16_t *motor3AngleP) {
   float demandAngle1 = 0;
   float demandAngle2 = 0;
   float demandAngle3 = 0;
@@ -228,17 +163,13 @@ void Kinematics::solveFootPosition(int16_t inputX, int16_t inputY, int16_t input
   // Set live motor angles to the newly calculated ones
 
   //motor 1: 
-  motor1.angleDegrees = demandAngle1;
-  motor1.angleMicros = _degreesToMicros(motor1.angleDegrees, motor1.calibOffset);
+  *motor1AngleP = demandAngle1; // In degrees!
 
   // motor 2:
-  motor2.angleDegrees = demandAngle2;
-  motor2.angleMicros = _degreesToMicros(motor2.angleDegrees, motor2.calibOffset);
+  *motor2AngleP = demandAngle2; // In degrees!
 
   // motor 3:
-  motor3.angleDegrees = demandAngle3;
-  motor3.angleMicros = _degreesToMicros(motor3.angleDegrees, motor3.calibOffset);
-
+  *motor3AngleP = demandAngle3; // In degrees!
 };
 
 
@@ -274,9 +205,10 @@ float Kinematics::_applyConstraints(uint8_t motor, float demandAngle) {
     else 
       return demandAngle;
   }
-  else
+  else {
     if (Serial)
       Serial.println("Motor argument in _apply constraints wrong, so constraints can't be applied! Terminating program."); //need a better way to report error
     while(1);         // terminate the program to avoid unpredictable movement (which could break stuff)
     return demandAngle;
+  }
 };
