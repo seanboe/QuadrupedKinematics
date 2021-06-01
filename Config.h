@@ -5,7 +5,7 @@
 #define DEGREES_TO_MICROS 7.5
 
 // Maximum motor speed; millis per 180 degrees factor; NOT DEGREES PER MILLIS I.E. SPEED (determined experimentally) this is 0.6 sec / 180 degrees (actual value is 0.52 sec)
-#define MAX_SPEED_INVERSE 3
+#define MAX_SPEED_INVERSE 3.5
 
 typedef enum {
   DEGREES, MILLIS
@@ -24,6 +24,11 @@ typedef enum {
   M1, M2, M3
 } motorID;
 
+
+// default axis lengths (the 'safe' position for all the motors)
+#define DEFAULT_X 0
+#define DEFAULT_Y 45    // This is the same as LIMB_1; I want the foot to be directly under the shoulder ie straight, not under the bearing
+#define DEFAULT_Z 177   // This is the foot-shoulder length when the leg makes a 45-45-90 triangle
 
 
 //********* robot hardware constraints **********
