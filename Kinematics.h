@@ -1,3 +1,9 @@
+// Kinematics.h
+// Author: Sean Boerhout
+// Copyright (C) 2021 Sean Boerhout
+
+
+
 #ifndef _KINEMATICS_
 #define _KINEMATICS_
 
