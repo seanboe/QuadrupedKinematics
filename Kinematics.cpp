@@ -2,6 +2,16 @@
 
 #include <Arduino.h>
 
+
+/*!
+ *    @param  legID Leg number. Numbering follows the quadrants of a unit circle.
+ *    @param  inputX startup x-axis coordinate
+ *    @param  inputY startup y-axis coordinate
+ *    @param  inputZ startup z-axis coordinate
+ *    @param  motor1CalibOffset Calibration offset for the first motor
+ *    @param  motor2CalibOffset Calibration offset for the second motor
+ *    @param  motor3CalibOffset Calibration offset for the third motor
+ */
 Kinematics::Kinematics(uint8_t legID, int16_t inputX, int16_t inputY, int16_t inputZ, uint16_t motor1CalibOffset, uint16_t motor2CalibOffset, uint16_t motor3CalibOffset) {
   _legID = legID;
 
@@ -36,6 +46,12 @@ Kinematics::Kinematics(uint8_t legID, int16_t inputX, int16_t inputY, int16_t in
 
 // *****************Private Functions*****************
 
+/*!
+ *    @brief  Converts degrees to microseconds for the motors. 
+ *    @param  inputDegrees Degrees to be converted to microseconds
+ *    @param  calibOffset Each motor's calibration offset
+ *    @return The Microseconds converted from inputDegrees
+ */
 uint16_t Kinematics::_degreesToMicros(uint8_t inputDegrees, uint8_t calibOffset) {
   int microsecondsInput = ((DEGREES_TO_MICROS * inputDegrees) + 500 + calibOffset);    // 500 is a "magic number" of micros for the motors; before that they do nothing
   return microsecondsInput;
@@ -44,6 +60,12 @@ uint16_t Kinematics::_degreesToMicros(uint8_t inputDegrees, uint8_t calibOffset)
 
 // *****************Public Functions*****************
 
+/*!
+ *    @brief  Sets the desired foot endpoint in Cartesian coordinates (mm)
+ *    @param  inputX x-axis coordinate
+ *    @param  inputY y-axis coordinate
+ *    @param  inputZ z-axis coordinate
+ */
 void Kinematics::setFootEndpoint(int16_t inputX, int16_t inputY, int16_t inputZ) {
 
   solveFootPosition(inputX, inputY, inputZ, &motor1.angleDegrees, &motor2.angleDegrees, &motor3.angleDegrees);
@@ -66,6 +88,10 @@ void Kinematics::setFootEndpoint(int16_t inputX, int16_t inputY, int16_t inputZ)
   }
 }
 
+/*!
+ *    @brief  Recalculates the foot position based on the interpolated axis
+ *    @returns void
+*/
 void Kinematics::updateDynamicFootPosition() {
 
   solveFootPosition(dynamicX.update(), dynamicY.update(), dynamicZ.update(), &motor1.dynamicDegrees, &motor2.dynamicDegrees, &motor3.dynamicDegrees);
@@ -74,7 +100,12 @@ void Kinematics::updateDynamicFootPosition() {
   motor3.dynamicMicros = _degreesToMicros(motor3.dynamicDegrees, motor3.calibOffset);
 }
 
-
+/*!
+ *    @brief  Solves the angles needed to achieve a defined foot-to-shoulder length
+ *    @param  demandFtShldr Desired foot-should length
+ *    @param  demandAngle2  Angle to hold the output for motor 2
+ *    @param  demandAngle3  Angle to hold the output for motor 2
+ */
 void Kinematics::solveFtShldrLength(float demandFtShldr, float *demandAngle2, float *demandAngle3) {
   
   float _demandFtShldrLength = demandFtShldr;
@@ -95,7 +126,13 @@ void Kinematics::solveFtShldrLength(float demandFtShldr, float *demandAngle2, fl
 };
 
 
-
+/*!
+ *    @brief  Solves the angles needed to achieve a specified x-axis movement
+ *    @param  inputX        The desired x-axis coordinate (mmm)
+ *    @param  inputZ        The desired z-axis coordinate (mm)
+ *    @param  demandAngle2  Angle to hold the output for motor 2
+ *    @param  demandFtShldrLength   Outputted foot shoulder length
+ */
 void  Kinematics::solveXMove(int16_t inputX, int16_t inputZ, float *demandAngle2, float *demandFtShldrLength) {
   if (inputZ == 0)
     inputZ = 1;   // you can never divide by 0!
@@ -109,7 +146,17 @@ void  Kinematics::solveXMove(int16_t inputX, int16_t inputZ, float *demandAngle2
 };
 
 
-
+/*!
+ *    @brief  Solves the angles needed to achieve a specified y-axis movement
+ *    @param  inputY        The desired y-axis coordinate (mmm)
+ *    @param  inputZ        The desired z-axis coordinate (mm)
+ *    @param  demandAngle2  Angle to hold the output for motor 1
+ *    @param  yPlaneZOutput The desired z-axis coordinate on the z-y plane.
+ *    When you shift the entire leg via a y-axis change, then the distance from
+ *    the foot to the shoulder on the x-z plane changes than that on the y-z plane.
+ *    This must be considered. Ideally, this output should be passed to all other 
+ *    calculations as the z-axis coordinate. 
+ */
 void Kinematics::solveYMove(int16_t inputY, int16_t inputZ, float *demandAngle1, float *yPlaneZOutput) {
   float demandFtShldrLength = sqrt(pow((float)abs(inputZ), 2) + pow((float)abs(inputY), 2)); // foot-shoulder distance on y-z plane (L1 in diagram)
   *yPlaneZOutput = sqrt(pow((float)abs(demandFtShldrLength), 2) - pow((float)abs(LIMB_1), 2));
@@ -131,6 +178,16 @@ void Kinematics::solveYMove(int16_t inputY, int16_t inputZ, float *demandAngle1,
 }
 
 
+/*!
+ *    @brief  Overall kinematics function that calculates all the angles for an x-y-z 
+      coordinate foot position. 
+ *    @param  inputX        The desired x-axis coordinate (mmm) 
+ *    @param  inputY        The desired y-axis coordinate (mm)
+ *    @param  inputZ        The desired z-axis coordinate (mm)
+ *    @param  motor1AngleP  The motor 1 angle output
+ *    @param  motor2AngleP  The motor 2 angle output
+ *    @param  motor3AngleP  The motor 3 angle output
+ */
 void Kinematics::solveFootPosition(int16_t inputX, int16_t inputY, int16_t inputZ, uint16_t *motor1AngleP, uint16_t *motor2AngleP, uint16_t *motor3AngleP) {
   float demandAngle1 = 0;
   float demandAngle2 = 0;
@@ -173,7 +230,11 @@ void Kinematics::solveFootPosition(int16_t inputX, int16_t inputY, int16_t input
 };
 
 
-
+/*!
+ *    @param motor Motor that the angle should be constrained for
+ *    @param demandAngle Angle to be constrained
+ *    @returns Constrained angle
+ */
 float Kinematics::_applyConstraints(uint8_t motor, float demandAngle) {
   if (motor == 1) {
     if (demandAngle > M1_MAX){
