@@ -12,30 +12,30 @@
  *    @param  motor2CalibOffset Calibration offset for the second motor
  *    @param  motor3CalibOffset Calibration offset for the third motor
  */
-Kinematics::Kinematics(uint8_t legID, int16_t inputX, int16_t inputY, int16_t inputZ, uint16_t motor1CalibOffset, uint16_t motor2CalibOffset, uint16_t motor3CalibOffset) {
+Kinematics::Kinematics(LegID legID, int16_t inputX, int16_t inputY, int16_t inputZ, Motor motors[]) {
   _legID = legID;
+  _motors = motors;
 
+  // Solve for the initial foot position
+  solveFootPosition(inputX, inputY, inputZ, &_motors[_indexOfMotor(_legID, M1)].angleDegrees, &_motors[_indexOfMotor(_legID, M2)].angleDegrees, &_motors[_indexOfMotor(_legID, M3)].angleDegrees);
 
-  // This solves for the motor angles in degrees and micros
-  solveFootPosition(inputX, inputY, inputZ, &motor1.angleDegrees, &motor2.angleDegrees, &motor3.angleDegrees);
+  // Motor 1
+  _motors[_indexOfMotor(_legID, M1)].angleMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M1)].angleDegrees, _motors[_indexOfMotor(_legID, M1)].calibOffset);
+  _motors[_indexOfMotor(_legID, M1)].dynamicDegrees = _motors[_indexOfMotor(_legID, M1)].angleDegrees;
+  _motors[_indexOfMotor(_legID, M1)].dynamicMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M1)].dynamicDegrees, _motors[_indexOfMotor(_legID, M1)].calibOffset);
+  _motors[_indexOfMotor(_legID, M1)].previousDegrees = 360;    // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
 
-  motor1.angleMicros = _degreesToMicros(motor1.angleDegrees, motor1CalibOffset);
-  motor1.angleDegrees = motor1.dynamicDegrees;
-  motor1.dynamicMicros = _degreesToMicros(motor1.dynamicDegrees, motor1CalibOffset);
-  motor1.previousDegrees = 360;         // 360 is a magic number. It just must be different than the start positions so that a call to updateDynamicPositions() works
-  motor1.calibOffset = motor1CalibOffset;
+  // Motor 2
+  _motors[_indexOfMotor(_legID, M2)].angleMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M2)].angleDegrees, _motors[_indexOfMotor(_legID, M2)].calibOffset);
+  _motors[_indexOfMotor(_legID, M2)].dynamicDegrees = _motors[_indexOfMotor(_legID, M2)].angleDegrees;
+  _motors[_indexOfMotor(_legID, M2)].dynamicMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M2)].dynamicDegrees, _motors[_indexOfMotor(_legID, M2)].calibOffset);
+  _motors[_indexOfMotor(_legID, M2)].previousDegrees = 360;    // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
 
-  motor2.angleMicros = _degreesToMicros(motor2.angleDegrees, motor2CalibOffset);
-  motor2.angleDegrees = motor2.dynamicDegrees;
-  motor2.dynamicMicros = _degreesToMicros(motor2.dynamicDegrees, motor2CalibOffset);
-  motor2.previousDegrees = 360;         // 360 is a magic number. It just must be different than the start positions so that a call to updateDynamicPositions() works
-  motor2.calibOffset = motor2CalibOffset;
-
-  motor3.angleMicros = _degreesToMicros(motor3.angleDegrees, motor3CalibOffset);
-  motor3.angleDegrees = motor3.dynamicDegrees;
-  motor3.dynamicMicros = _degreesToMicros(motor3.dynamicDegrees, motor3CalibOffset);
-  motor3.previousDegrees = 360;         // 360 is a magic number. It just must be different than the start positions so that a call to updateDynamicPositions() works
-  motor3.calibOffset = motor3CalibOffset;
+  // Motor 3
+  _motors[_indexOfMotor(_legID, M3)].angleMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M3)].angleDegrees, _motors[_indexOfMotor(_legID, M3)].calibOffset);
+  _motors[_indexOfMotor(_legID, M3)].dynamicDegrees = _motors[_indexOfMotor(_legID, M3)].angleDegrees;
+  _motors[_indexOfMotor(_legID, M3)].dynamicMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M3)].dynamicDegrees, _motors[_indexOfMotor(_legID, M3)].calibOffset);
+  _motors[_indexOfMotor(_legID, M3)].previousDegrees = 360;    // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
 
   dynamicX.go(inputX);
   dynamicY.go(inputY);
@@ -58,6 +58,19 @@ uint16_t Kinematics::_degreesToMicros(uint8_t inputDegrees, uint8_t calibOffset)
 };
 
 
+/*!
+ *    @brief  Returns the index of a motor in the motor list given
+ *            the leg it is in and the motor number of the leg 
+ *            you want.
+ *    @param  leg The leg that the motor is in. 
+ *    @param  motor The motor in the leg you are trying to access
+ *    @return The index of the motor
+ */
+uint16_t Kinematics::_indexOfMotor(LegID leg, MotorID motor) {
+  return ((leg - 1) * MOTORS_PER_LEG + motor) - 1;
+};
+
+
 // *****************Public Functions*****************
 
 /*!
@@ -68,19 +81,22 @@ uint16_t Kinematics::_degreesToMicros(uint8_t inputDegrees, uint8_t calibOffset)
  */
 void Kinematics::setFootEndpoint(int16_t inputX, int16_t inputY, int16_t inputZ) {
 
-  solveFootPosition(inputX, inputY, inputZ, &motor1.angleDegrees, &motor2.angleDegrees, &motor3.angleDegrees);
+  solveFootPosition(inputX, inputY, inputZ, &_motors[_indexOfMotor(_legID, M1)].angleDegrees, &_motors[_indexOfMotor(_legID, M2)].angleDegrees, &_motors[_indexOfMotor(_legID, M3)].angleDegrees);
 
-  uint16_t motor1AngleDelta = abs(motor1.angleDegrees - motor1.previousDegrees);
-  uint16_t motor2AngleDelta = abs(motor2.angleDegrees - motor2.previousDegrees);
-  uint16_t motor3AngleDelta = abs(motor3.angleDegrees - motor3.previousDegrees);
+  uint16_t motor1AngleDelta = abs(_motors[_indexOfMotor(_legID, M1)].angleDegrees - _motors[_indexOfMotor(_legID, M1)].previousDegrees);
+  uint16_t motor2AngleDelta = abs(_motors[_indexOfMotor(_legID, M2)].angleDegrees - _motors[_indexOfMotor(_legID, M2)].previousDegrees);
+  uint16_t motor3AngleDelta = abs(_motors[_indexOfMotor(_legID, M3)].angleDegrees - _motors[_indexOfMotor(_legID, M3)].previousDegrees);
   uint16_t demandTime = lrint(MAX_SPEED_INVERSE * max(max(motor1AngleDelta, motor2AngleDelta), motor3AngleDelta));
 
 
     // determine whether motor angles have been updated i.e. new end angle, and update final positions accordingly
-  if ((motor1.previousDegrees != motor1.angleDegrees) || (motor2.previousDegrees != motor2.angleDegrees) || (motor3.previousDegrees != motor3.angleDegrees)) {
-    motor1.previousDegrees = motor1.angleDegrees;
-    motor2.previousDegrees = motor2.angleDegrees;
-    motor3.previousDegrees = motor3.angleDegrees;
+  if ((_motors[_indexOfMotor(_legID, M1)].previousDegrees != _motors[_indexOfMotor(_legID, M1)].angleDegrees)
+   || (_motors[_indexOfMotor(_legID, M2)].previousDegrees != _motors[_indexOfMotor(_legID, M2)].angleDegrees) 
+   || (_motors[_indexOfMotor(_legID, M3)].previousDegrees != _motors[_indexOfMotor(_legID, M3)].angleDegrees)) {
+     
+    _motors[_indexOfMotor(_legID, M1)].previousDegrees = _motors[_indexOfMotor(_legID, M1)].angleDegrees;
+    _motors[_indexOfMotor(_legID, M2)].previousDegrees = _motors[_indexOfMotor(_legID, M2)].angleDegrees;
+    _motors[_indexOfMotor(_legID, M3)].previousDegrees = _motors[_indexOfMotor(_legID, M3)].angleDegrees;
 
     dynamicX.go(inputX, demandTime, LINEAR, ONCEFORWARD);
     dynamicY.go(inputY, demandTime, LINEAR, ONCEFORWARD);
@@ -94,10 +110,10 @@ void Kinematics::setFootEndpoint(int16_t inputX, int16_t inputY, int16_t inputZ)
 */
 void Kinematics::updateDynamicFootPosition() {
 
-  solveFootPosition(dynamicX.update(), dynamicY.update(), dynamicZ.update(), &motor1.dynamicDegrees, &motor2.dynamicDegrees, &motor3.dynamicDegrees);
-  motor1.dynamicMicros = _degreesToMicros(motor1.dynamicDegrees, motor1.calibOffset);
-  motor2.dynamicMicros = _degreesToMicros(motor2.dynamicDegrees, motor2.calibOffset);
-  motor3.dynamicMicros = _degreesToMicros(motor3.dynamicDegrees, motor3.calibOffset);
+  solveFootPosition(dynamicX.update(), dynamicY.update(), dynamicZ.update(), &_motors[_indexOfMotor(_legID, M1)].dynamicDegrees, &_motors[_indexOfMotor(_legID, M2)].dynamicDegrees, &_motors[_indexOfMotor(_legID, M3)].dynamicDegrees);
+  _motors[_indexOfMotor(_legID, M1)].dynamicMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M1)].dynamicDegrees, _motors[_indexOfMotor(_legID, M1)].calibOffset);
+  _motors[_indexOfMotor(_legID, M2)].dynamicMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M2)].dynamicDegrees, _motors[_indexOfMotor(_legID, M2)].calibOffset);
+  _motors[_indexOfMotor(_legID, M3)].dynamicMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M3)].dynamicDegrees, _motors[_indexOfMotor(_legID, M3)].calibOffset);
 }
 
 /*!
@@ -172,6 +188,9 @@ void Kinematics::solveYMove(int16_t inputY, int16_t inputZ, float *demandAngle1,
     *demandAngle1 += (float)abs((float)90 - (alpha - theta));   // since both triangles (refer to drawings) have the same hypotenuse, alpha > theta for all inputY
   }
 
+
+  // NEGATIVE signifies a direction: the foot is moving TOWARDS THE ROBOT
+  // POSITIVE signifies AWAY FROM ROBOT
   if (inputY < LIMB_1)
     *demandAngle1 *= -1;
 
@@ -188,7 +207,7 @@ void Kinematics::solveYMove(int16_t inputY, int16_t inputZ, float *demandAngle1,
  *    @param  motor2AngleP  The motor 2 angle output
  *    @param  motor3AngleP  The motor 3 angle output
  */
-void Kinematics::solveFootPosition(int16_t inputX, int16_t inputY, int16_t inputZ, uint16_t *motor1AngleP, uint16_t *motor2AngleP, uint16_t *motor3AngleP) {
+void Kinematics::solveFootPosition(int16_t inputX, int16_t inputY, int16_t inputZ, int16_t *motor1AngleP, int16_t *motor2AngleP, int16_t *motor3AngleP) {
   float demandAngle1 = 0;
   float demandAngle2 = 0;
   float demandAngle3 = 0;
@@ -207,15 +226,6 @@ void Kinematics::solveFootPosition(int16_t inputX, int16_t inputY, int16_t input
   demandAngle2 = lrint(demandAngle2);
   demandAngle3 = lrint(demandAngle3);
 
-  // Calculate final demand angles suited to motors by applying necessary offsets
-  demandAngle1 += M1_OFFSET;
-  demandAngle2 += M2_OFFSET;
-  demandAngle3 = (M3_OFFSET - demandAngle3) + M3_OFFSET;
-
-  // Constrain motor angles
-  demandAngle1 = _applyConstraints(1, demandAngle1);
-  demandAngle2 = _applyConstraints(2, demandAngle2);
-  demandAngle3 = _applyConstraints(3, demandAngle3);
 
   // Set live motor angles to the newly calculated ones
 
@@ -227,49 +237,4 @@ void Kinematics::solveFootPosition(int16_t inputX, int16_t inputY, int16_t input
 
   // motor 3:
   *motor3AngleP = demandAngle3; // In degrees!
-};
-
-
-/*!
- *    @param motor Motor that the angle should be constrained for
- *    @param demandAngle Angle to be constrained
- *    @returns Constrained angle
- */
-float Kinematics::_applyConstraints(uint8_t motor, float demandAngle) {
-  if (motor == 1) {
-    if (demandAngle > M1_MAX){
-      return M1_MAX;
-    }
-    else if (demandAngle < M1_MIN){
-      return M1_MIN;
-    }
-    else
-      return demandAngle;
-  }
-  else if (motor == 2) {
-    if (demandAngle > M2_MAX){
-      return M2_MAX;
-    }
-    else if (demandAngle < M2_MIN){
-      return M2_MIN;
-    }
-    else
-      return demandAngle;
-  }
-  else if (motor == 3) {
-    if (demandAngle > M3_MAX) {
-      return M3_MAX;
-    }
-    else if (demandAngle < M3_MIN) {
-      return M3_MIN;
-    }
-    else 
-      return demandAngle;
-  }
-  else {
-    if (Serial)
-      Serial.println("Motor argument in _apply constraints wrong, so constraints can't be applied! Terminating program."); //need a better way to report error
-    while(1);         // terminate the program to avoid unpredictable movement (which could break stuff)
-    return demandAngle;
-  }
 };
