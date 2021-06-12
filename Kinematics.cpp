@@ -5,42 +5,9 @@
 
 /*!
  *    @param  legID Leg number. Numbering follows the quadrants of a unit circle.
- *    @param  inputX startup x-axis coordinate
- *    @param  inputY startup y-axis coordinate
- *    @param  inputZ startup z-axis coordinate
- *    @param  motor1CalibOffset Calibration offset for the first motor
- *    @param  motor2CalibOffset Calibration offset for the second motor
- *    @param  motor3CalibOffset Calibration offset for the third motor
  */
-Kinematics::Kinematics(LegID legID, int16_t inputX, int16_t inputY, int16_t inputZ, Motor motors[]) {
+Kinematics::Kinematics(LegID legID) {
   _legID = legID;
-  _motors = motors;
-
-  // Solve for the initial foot position
-  solveFootPosition(inputX, inputY, inputZ, &_motors[_indexOfMotor(_legID, M1)].angleDegrees, &_motors[_indexOfMotor(_legID, M2)].angleDegrees, &_motors[_indexOfMotor(_legID, M3)].angleDegrees);
-
-  // Motor 1
-  _motors[_indexOfMotor(_legID, M1)].angleMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M1)].angleDegrees, _motors[_indexOfMotor(_legID, M1)].calibOffset);
-  _motors[_indexOfMotor(_legID, M1)].dynamicDegrees = _motors[_indexOfMotor(_legID, M1)].angleDegrees;
-  _motors[_indexOfMotor(_legID, M1)].dynamicMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M1)].dynamicDegrees, _motors[_indexOfMotor(_legID, M1)].calibOffset);
-  _motors[_indexOfMotor(_legID, M1)].previousDegrees = 360;    // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
-
-  // Motor 2
-  _motors[_indexOfMotor(_legID, M2)].angleMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M2)].angleDegrees, _motors[_indexOfMotor(_legID, M2)].calibOffset);
-  _motors[_indexOfMotor(_legID, M2)].dynamicDegrees = _motors[_indexOfMotor(_legID, M2)].angleDegrees;
-  _motors[_indexOfMotor(_legID, M2)].dynamicMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M2)].dynamicDegrees, _motors[_indexOfMotor(_legID, M2)].calibOffset);
-  _motors[_indexOfMotor(_legID, M2)].previousDegrees = 360;    // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
-
-  // Motor 3
-  _motors[_indexOfMotor(_legID, M3)].angleMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M3)].angleDegrees, _motors[_indexOfMotor(_legID, M3)].calibOffset);
-  _motors[_indexOfMotor(_legID, M3)].dynamicDegrees = _motors[_indexOfMotor(_legID, M3)].angleDegrees;
-  _motors[_indexOfMotor(_legID, M3)].dynamicMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M3)].dynamicDegrees, _motors[_indexOfMotor(_legID, M3)].calibOffset);
-  _motors[_indexOfMotor(_legID, M3)].previousDegrees = 360;    // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
-
-  dynamicX.go(inputX);
-  dynamicY.go(inputY);
-  dynamicZ.go(inputZ);
-
 };
 
 
@@ -69,6 +36,44 @@ uint16_t Kinematics::_degreesToMicros(uint8_t inputDegrees, uint8_t calibOffset)
 uint16_t Kinematics::_indexOfMotor(LegID leg, MotorID motor) {
   return ((leg - 1) * MOTORS_PER_LEG + motor) - 1;
 };
+
+
+/*!
+ *    @brief  Initializes the motor angles given the default position. Also does setup
+ *    to integrate the external array of motors in the class.
+ *    @param  inputX startup x-axis coordinate
+ *    @param  inputY startup y-axis coordinate
+ *    @param  inputZ startup z-axis coordinate
+ *    @param  legMotors array of Motor variables for each motor
+ */
+void Kinematics::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[]) {
+  _motors = legMotors;
+
+  // Solve for the initial foot position
+  solveFootPosition(inputX, inputY, inputZ, &_motors[_indexOfMotor(_legID, M1)].angleDegrees, &_motors[_indexOfMotor(_legID, M2)].angleDegrees, &_motors[_indexOfMotor(_legID, M3)].angleDegrees);
+
+  // Motor 1
+  _motors[_indexOfMotor(_legID, M1)].angleMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M1)].angleDegrees, _motors[_indexOfMotor(_legID, M1)].calibOffset);
+  _motors[_indexOfMotor(_legID, M1)].dynamicDegrees = _motors[_indexOfMotor(_legID, M1)].angleDegrees;
+  _motors[_indexOfMotor(_legID, M1)].dynamicMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M1)].dynamicDegrees, _motors[_indexOfMotor(_legID, M1)].calibOffset);
+  _motors[_indexOfMotor(_legID, M1)].previousDegrees = 360;    // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
+
+  // Motor 2
+  _motors[_indexOfMotor(_legID, M2)].angleMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M2)].angleDegrees, _motors[_indexOfMotor(_legID, M2)].calibOffset);
+  _motors[_indexOfMotor(_legID, M2)].dynamicDegrees = _motors[_indexOfMotor(_legID, M2)].angleDegrees;
+  _motors[_indexOfMotor(_legID, M2)].dynamicMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M2)].dynamicDegrees, _motors[_indexOfMotor(_legID, M2)].calibOffset);
+  _motors[_indexOfMotor(_legID, M2)].previousDegrees = 360;    // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
+
+  // Motor 3
+  _motors[_indexOfMotor(_legID, M3)].angleMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M3)].angleDegrees, _motors[_indexOfMotor(_legID, M3)].calibOffset);
+  _motors[_indexOfMotor(_legID, M3)].dynamicDegrees = _motors[_indexOfMotor(_legID, M3)].angleDegrees;
+  _motors[_indexOfMotor(_legID, M3)].dynamicMicros = _degreesToMicros(_motors[_indexOfMotor(_legID, M3)].dynamicDegrees, _motors[_indexOfMotor(_legID, M3)].calibOffset);
+  _motors[_indexOfMotor(_legID, M3)].previousDegrees = 360;    // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
+
+  dynamicX.go(inputX);
+  dynamicY.go(inputY);
+  dynamicZ.go(inputZ);
+}
 
 
 // *****************Public Functions*****************

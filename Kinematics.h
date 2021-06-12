@@ -47,12 +47,14 @@ class Kinematics {
     rampInt dynamicY;
     rampInt dynamicZ;
 
-  public:
-
     Motor * _motors;  // list of ALL robot motors
 
+  public:
+
     // Kinematics(uint8_t legID, uint16_t motor1CalibOffset, uint16_t motor1StartPos, uint16_t motor2CalibOffset, uint16_t motor2StartPos, uint16_t motor3CalibOffset, uint16_t motor3StartPos);
-    Kinematics(LegID legID, int16_t inputX, int16_t inputY, int16_t inputZ, Motor motors[]);
+    Kinematics(LegID legID);
+
+    void init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[]);
 
     // calculates all relevant motor angles (the angles of motors 2 & 3) to achieve vertical translation
     void solveFtShldrLength(float demandFtShldr, float *demandAngle2, float *demandAngle3);

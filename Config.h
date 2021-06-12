@@ -4,7 +4,7 @@
 // degrees to microseconds sale factor (determined experimentally, MUST be the same for every motor)
 #define DEGREES_TO_MICROS 7.5
 
-// Maximum motor speed; millis per 180 degrees factor; NOT DEGREES PER MILLIS I.E. SPEED (determined experimentally) this is 0.6 sec / 180 degrees (actual value is 0.52 sec)
+// Maximum motor speed; milliseconds per 180 degrees factor; NOT DEGREES PER MILLISECONDS I.E. SPEED (determined experimentally) this is 0.6 sec / 180 degrees (actual value is 0.52 sec)
 #define MAX_SPEED_INVERSE 3.5
 
 // This is used to parse which motors are for which leg from the list of motors.
@@ -12,11 +12,6 @@
 
 // Do NOT change this! I'm only using this for documentation. This library is for QUADRUPEDS and NOTHING else!
 #define ROBOT_LEG_COUNT   4
-
-typedef enum {
-  DEGREES, MILLIS
-} unitType;
-
 
 // leg numbering
 typedef enum {
