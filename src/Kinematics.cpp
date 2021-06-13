@@ -70,6 +70,8 @@ void Kinematics::setFootEndpoint(int16_t inputX, int16_t inputY, int16_t inputZ)
 
   solveFootPosition(inputX, inputY, inputZ, &_motors[_indexOfMotor(_legID, M1)].angleDegrees, &_motors[_indexOfMotor(_legID, M2)].angleDegrees, &_motors[_indexOfMotor(_legID, M3)].angleDegrees);
 
+  // ******** Everything below is for DYNAMIC movement ********
+
   uint16_t motor1AngleDelta = abs(_motors[_indexOfMotor(_legID, M1)].angleDegrees - _motors[_indexOfMotor(_legID, M1)].previousDegrees);
   uint16_t motor2AngleDelta = abs(_motors[_indexOfMotor(_legID, M2)].angleDegrees - _motors[_indexOfMotor(_legID, M2)].previousDegrees);
   uint16_t motor3AngleDelta = abs(_motors[_indexOfMotor(_legID, M3)].angleDegrees - _motors[_indexOfMotor(_legID, M3)].previousDegrees);
