@@ -1,12 +1,9 @@
 #ifndef _CONFIG_
 #define _CONFIG_
 
-// degrees to microseconds sale factor (determined experimentally, MUST be the same for every motor)
-#define DEGREES_TO_MICROS 7.5
-
 // Maximum motor speed; milliseconds per 180 degrees factor; NOT DEGREES PER MILLISECONDS I.E. SPEED (determined experimentally) this is 0.6 sec / 180 degrees (actual value is 0.52 sec)
-// #define MAX_SPEED_INVERSE 3.5
-#define MAX_SPEED_INVERSE   25
+#define MAX_SPEED_INVERSE 3.5
+// #define MAX_SPEED_INVERSE   25
 
 // This is used to parse which motors are for which leg from the list of motors.
 #define MOTORS_PER_LEG    3
