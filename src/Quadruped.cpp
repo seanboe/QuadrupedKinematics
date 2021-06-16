@@ -28,25 +28,26 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
   if ((controlCoordinateX == 0) && (controlCoordinateY == 0)) {
     _robotMode = STATIC_STANDING;
   }
-  else 
+  else {
     _robotMode = WALKING;
-
-
-  if (leg1StepPlanner.footAtOrigin() && (justSetEndpoint == false)) {
-    leg1StepPlanner.setStepEndpoint(controlCoordinateX, controlCoordinateY, _robotMode);
-    justSetEndpoint = true;
   }
 
-  if (leg1StepPlanner.footAtOrigin())
-    justSetEndpoint = true;
-  else
-    justSetEndpoint = false;
+  if (_robotMode == WALKING) {
+    if (leg1StepPlanner.footAtOrigin() && (justSetEndpoint == false)) {
+      leg1StepPlanner.setStepEndpoint(controlCoordinateX, controlCoordinateY, _robotMode);
+      justSetEndpoint = true;
+    }
 
-  if (leg1StepPlanner.update(_robotMode)) {
-    int16_t leg1InputX = leg1StepPlanner.dynamicFootPosition.x;
-    int16_t leg1InputY = leg1StepPlanner.dynamicFootPosition.y;
-    int16_t leg1InputZ = leg1StepPlanner.dynamicFootPosition.z;
+    if (!leg1StepPlanner.footAtOrigin())
+      justSetEndpoint = false;
 
-    leg1Kinematics.setFootEndpoint(leg1InputX, leg1InputY, leg1InputZ);
+
+    if (leg1StepPlanner.update(_robotMode)) {
+      int16_t leg1InputX = leg1StepPlanner.dynamicFootPosition.x;
+      int16_t leg1InputY = leg1StepPlanner.dynamicFootPosition.y;
+      int16_t leg1InputZ = leg1StepPlanner.dynamicFootPosition.z;
+
+      leg1Kinematics.setFootEndpoint(leg1InputX, leg1InputY, leg1InputZ);
+    }
   }
 };

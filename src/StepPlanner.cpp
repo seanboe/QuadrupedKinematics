@@ -72,10 +72,11 @@ bool StepPlanner::update(ROBOT_MODE robotMode) {
     dynamicFootPosition.y = footPosY.update();
     dynamicFootPosition.z = getStepHeight(_footXYDrop, _legMode);
 
-    // Serial.println();
-    // Serial.println(_footXYDrop);
-    // Serial.println(footPosX.update());
-    // Serial.println(footPosX.update());
+    Serial.println(_footXYDrop);
+    Serial.print(", ");
+    Serial.println(footPosX.update());
+    Serial.print(", ");
+    Serial.println(footPosY.update());
 
 
     switch (_legMode) {
