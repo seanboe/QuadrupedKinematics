@@ -4,6 +4,9 @@ StepPlanner::StepPlanner(LegID legID) {
   _legID = legID;
 };
 
+/*!
+ *    @brief Initializes the gaits and sets up the leg modes
+*/
 void StepPlanner::init() {
 
   _legMode = STANDING;
@@ -24,13 +27,21 @@ void StepPlanner::init() {
   footPosY.go(0);
 }
 
+/*!
+ *    @brief Sets the walking giat. Should only be called when the robot is standing
+*/
 void StepPlanner::setGait(GaitType gaitType) {
   if (_legMode == STANDING)
     _gaitType = gaitType;
 }
 
-void StepPlanner::update(ROBOT_MODE robotMode) {
-  
+/*!
+ *    @brief Updates the position of the foot as the step progresses.
+ *    @param robotMode The mode the robot is in i.e. walking, static_standing.
+             used to determine when the first step and the last step are being made
+ *    @returns True when the foot position was updated, false if it wasn't.
+*/
+bool StepPlanner::update(ROBOT_MODE robotMode) {
 
   // Make sure that the leg needs to stand AND the robot should stand. 
   if ((_legMode == STANDING) && (robotMode == WALKING)) {
@@ -45,18 +56,27 @@ void StepPlanner::update(ROBOT_MODE robotMode) {
       _legMode = FIRST_STEP_DRAW_BACK;
       _footXYDrop  = 0;
     }
-    return;
+    return true;
   }
   // else if ((_legMode == STANDING) && (robotMode == STATIC_STANDING))
-
 
   float periodHalf = _gaits[_gaitType].periodHalf;
 
   if ((millis() - _previousUpdateTime) % TIME_TO_UPDATE == 0) {
 
+    // For legs 2 and 3, the negative and positive parts of the x axis are flipped
+    if (_legID == LEG_2 || _legID == LEG_3)
+      dynamicFootPosition.x *= -1;
+
     dynamicFootPosition.x = footPosX.update();
     dynamicFootPosition.y = footPosY.update();
     dynamicFootPosition.z = getStepHeight(_footXYDrop, _legMode);
+
+    // Serial.println();
+    // Serial.println(_footXYDrop);
+    // Serial.println(footPosX.update());
+    // Serial.println(footPosX.update());
+
 
     switch (_legMode) {
       case FIRST_STEP_ARC:            
@@ -86,14 +106,17 @@ void StepPlanner::update(ROBOT_MODE robotMode) {
       case STANDING:
         break;
     }
+    _previousUpdateTime = (millis() - 1);
+    return true;
   }
-
-      _previousUpdateTime = (millis() - 1);
-
+  return false;
 };
 
 /*!
  *    @brief Performs the calculation of the arc itself ONLY... doesn't know where the foot actually is
+ *    @param footXYDropL The x drop position of the foot.
+ *    @param legMode The mode/phase of walking the leg is in.
+ *    @returns The hight that should be written to the legs i.e. foot z distance (foot-should) - curve hight at the given footXYDropL
 */
 int16_t StepPlanner::getStepHeight(int16_t footXYDropL, LegMode legMode) {
 
@@ -104,19 +127,24 @@ int16_t StepPlanner::getStepHeight(int16_t footXYDropL, LegMode legMode) {
 
   switch (legMode) {
     case FIRST_STEP_ARC:           stepHeight = _robotHeight - lrint( (amplitude/2) * cos(PI * (footXYDropL - (periodHalf/4))/(periodHalf/2) ) ); break;
-    case FIRST_STEP_DRAW_BACK:     stepHeight = 0; break;
+    case FIRST_STEP_DRAW_BACK:     stepHeight = _robotHeight - 0; break;
     case ACTIVE_WALKING_ARC:       stepHeight = _robotHeight - lrint( amplitude * cos( (PI * (footXYDropL)/periodHalf) ) ); break;
-    case ACTIVE_WALKING_DRAW_BACK: stepHeight = 0; break;
-    case STANDING:                 stepHeight = 0;
+    case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight - 0; break;
+    case STANDING:                 stepHeight = _robotHeight - 0;
   }
 
   return stepHeight;
 
 };
 
+/*!
+ *    @brief Allows you to set the endpoint of the step depending on the direction you command
+ *    @param controllCoordinateY X direction of the controller coordinate (yes, flipped)
+ *    @param controllCoordinateX Y direction of the controller coordinate (yed, flipped)
+ *    @returns True if it's time to update the endpoint, false if it's not.
+*/
+void StepPlanner::setStepEndpoint(int16_t controlCoordinateY, int16_t controlCoordinateX, ROBOT_MODE robotMode) {
 
-void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, ROBOT_MODE robotMode) {
-  // Find the coordinate point to walk to for each leg while considering the direcion to walk in.
 
   float periodHalf = _gaits[_gaitType].periodHalf;
 
@@ -124,10 +152,13 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
   if (robotMode == STATIC_STANDING) {
     _stepEndpoint.x = 0;
     _stepEndpoint.y = 0;
+    footPosX.go(_stepEndpoint.x);
+    footPosY.go(_stepEndpoint.y);
     _legMode = STANDING;
+    return;
   }
   // make sure that math works (vertical lines are undefined)
-  else if (controlCoordinateX == 0 && controlCoordinateY != 0) {
+  else if (controlCoordinateX == 0) {
     _stepEndpoint.x = 0;
     _stepEndpoint.y = periodHalf/2;
   }
@@ -147,10 +178,12 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
     _stepEndpoint.x *= -1;
     _stepEndpoint.y *= -1;
   }
-    
 
   long completionTime = (long)((TIME_TO_UPDATE - 1) * (periodHalf/(2 * GAIT_POSITION_INCREMENT)));
 
+  // Ideally, the interpolation objects will effectively track the position of footXY drop.
+  // When it reaches its maximum point, so does footXY drop (likewise when they are 0).
+  // Serial.println(_stepEndpoint.x);
   footPosX.go(_stepEndpoint.x, completionTime, LINEAR, FORTHANDBACK);
   footPosY.go(_stepEndpoint.y, completionTime, LINEAR, FORTHANDBACK);
 };

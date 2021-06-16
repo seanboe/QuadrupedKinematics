@@ -38,7 +38,7 @@ class StepPlanner {
 
     void setGait(GaitType gaitType);
 
-    void update(ROBOT_MODE robotMode);
+    bool update(ROBOT_MODE robotMode);
     void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, ROBOT_MODE robotMode);
 
     int16_t getStepHeight(int16_t footXYDropL, LegMode movementType);
@@ -47,10 +47,11 @@ class StepPlanner {
 
     Coordinate dynamicFootPosition;
 
+    rampFloat footPosX;
+    rampFloat footPosY;
+
   private: 
 
-    rampInt footPosX;
-    rampInt footPosY;
 
     LegID _legID;     
 
@@ -70,3 +71,9 @@ class StepPlanner {
 };
 
 #endif
+
+/*
+Be aware that I made a mistake organizing the axis. Looking down the robot, moving the feet forwards is a movement along the x axis as defined in class Kinematics. Y is side to side.
+This, however, isn't intuitive; you'd normally expect the other way around, which means that x and y must be flipped. currently, everything is aligned to the standard in Kinematics,
+but this means that the data must be flipped for users (x is y and y is x), which is done in setStepEndpoint.
+*/

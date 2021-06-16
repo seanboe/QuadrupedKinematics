@@ -68,6 +68,9 @@ void Kinematics::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legM
  */
 void Kinematics::setFootEndpoint(int16_t inputX, int16_t inputY, int16_t inputZ) {
 
+  // Set inputY = 0 to under the shoulder
+  inputY += LIMB_1;
+
   solveFootPosition(inputX, inputY, inputZ, &_motors[_indexOfMotor(_legID, M1)].angleDegrees, &_motors[_indexOfMotor(_legID, M2)].angleDegrees, &_motors[_indexOfMotor(_legID, M3)].angleDegrees);
 
   // ******** Everything below is for DYNAMIC movement ********
