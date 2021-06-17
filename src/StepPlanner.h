@@ -33,24 +33,20 @@ class StepPlanner {
 
   public:
     StepPlanner(LegID legID);
-
-    void init();
-
+    void init(int16_t robotHeight);
     void setGait(GaitType gaitType);
-
     bool update(ROBOT_MODE robotMode);
     void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY);
-
     int16_t getStepHeight(int16_t footXYDropL, LegMode movementType);
-
     bool footAtOrigin();
+    void reset();
 
     Coordinate dynamicFootPosition;
 
+  private: 
+
     rampFloat footPosX;
     rampFloat footPosY;
-
-  private: 
 
     bool _wasAtOrigin;
 

@@ -7,25 +7,16 @@ StepPlanner::StepPlanner(LegID legID) {
 /*!
  *    @brief Initializes the gaits and sets up the leg modes
 */
-void StepPlanner::init() {
+void StepPlanner::init(int16_t robotHeight) {
 
-  _wasAtOrigin = false;
   _legMode = STANDING;
   _gaitType = DEFAULT_GAIT;
+  _robotHeight = robotHeight;
 
   _gaits[TROT].amplitude = 50;
   _gaits[TROT].periodHalf = 140;
 
-  dynamicFootPosition.x = 0;
-  dynamicFootPosition.y = 0;
-  dynamicFootPosition.z = 177;
-
-  _footXYDrop = 0;
-
-  _robotHeight = 177;
-
-  footPosX.go(0);
-  footPosY.go(0);
+  reset();
 }
 
 /*!
@@ -43,6 +34,7 @@ void StepPlanner::setGait(GaitType gaitType) {
  *    @returns True when the foot position was updated, false if it wasn't.
 */
 bool StepPlanner::update(ROBOT_MODE robotMode) {
+
   // Make sure that the leg needs to stand AND the robot should stand. 
   if ((_legMode == STANDING) && (robotMode == WALKING)) {
     _previousUpdateTime = (millis() - 1);
@@ -58,7 +50,6 @@ bool StepPlanner::update(ROBOT_MODE robotMode) {
     }
     return true;
   }
-  // else if ((_legMode == STANDING) && (robotMode == STATIC_STANDING))
 
   float periodHalf = _gaits[_gaitType].periodHalf;
 
@@ -71,13 +62,6 @@ bool StepPlanner::update(ROBOT_MODE robotMode) {
     dynamicFootPosition.x = footPosX.update();
     dynamicFootPosition.y = footPosY.update();
     dynamicFootPosition.z = getStepHeight(_footXYDrop, _legMode);
-
-    // Serial.println(_footXYDrop);
-    // Serial.print(", ");
-    // Serial.println(footPosX.update());
-    // Serial.print(", ");
-    // Serial.println(footPosY.update());
-
 
     switch (_legMode) {
       case FIRST_STEP_ARC:            
@@ -154,7 +138,6 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
 
   // Check if stopped walking
   if (controlCoordinateX == 0 && controlCoordinateY == 0) {
-    Serial.println("standing");
     _stepEndpoint.x = 0.0;
     _stepEndpoint.y = 0.0;
     footPosX.go(_stepEndpoint.x);
@@ -195,8 +178,6 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
 
   // Ideally, the interpolation objects will effectively track the position of footXY drop.
   // When it reaches its maximum point, so does footXY drop (likewise when they are 0).
-  Serial.println(stepEndpointX);
-  Serial.println(stepEndpointY);
 
   footPosX.go(_stepEndpoint.x, completionTime, LINEAR, FORTHANDBACK);
   footPosY.go(_stepEndpoint.y, completionTime, LINEAR, FORTHANDBACK);
@@ -215,4 +196,20 @@ bool StepPlanner::footAtOrigin() {
   if ((_footXYDrop != 0))
     _wasAtOrigin = false;
   return false;
+}
+
+/*!
+ *    @brief Resets all dynamic gait parameters
+*/
+void StepPlanner::reset() {
+  dynamicFootPosition.x = 0;
+  dynamicFootPosition.y = 0;
+  dynamicFootPosition.z = _robotHeight;
+
+  _wasAtOrigin = false;
+  _legMode = STANDING;
+  _footXYDrop = 0;
+
+  footPosX.go(0);
+  footPosY.go(0);
 }
