@@ -32,8 +32,8 @@ typedef enum {
 class StepPlanner {
 
   public:
-    StepPlanner(LegID legID);
-    void init(int16_t robotHeight);
+    StepPlanner();
+    void init(LegID legID, int16_t robotHeight);
     void setGait(GaitType gaitType);
     bool update(ROBOT_MODE robotMode);
     void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY);

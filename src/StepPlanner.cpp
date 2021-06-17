@@ -1,13 +1,13 @@
 #include "StepPlanner.h"
 
-StepPlanner::StepPlanner(LegID legID) {
-  _legID = legID;
-};
+StepPlanner::StepPlanner(void) {};
 
 /*!
  *    @brief Initializes the gaits and sets up the leg modes
 */
-void StepPlanner::init(int16_t robotHeight) {
+void StepPlanner::init(LegID legID, int16_t robotHeight) {
+
+  _legID = legID;
 
   _legMode = STANDING;
   _gaitType = DEFAULT_GAIT;
@@ -42,11 +42,11 @@ bool StepPlanner::update(ROBOT_MODE robotMode) {
     /// Determine which foot goes first
     if (_legID == LEG_1 || _legID == LEG_3) {
       _legMode = FIRST_STEP_ARC;
-      _footXYDrop  = 0;
+      // _footXYDrop  = 0;
     }
     else if (_legID == LEG_2 || _legID == LEG_4) {
       _legMode = FIRST_STEP_DRAW_BACK;
-      _footXYDrop  = 0;
+      // _footXYDrop  = 0;
     }
     return true;
   }
@@ -56,8 +56,6 @@ bool StepPlanner::update(ROBOT_MODE robotMode) {
   if ((millis() - _previousUpdateTime) % TIME_TO_UPDATE == 0) {
 
     // For legs 2 and 3, the negative and positive parts of the x axis are flipped
-    if (_legID == LEG_2 || _legID == LEG_3)
-      dynamicFootPosition.x *= -1;
 
     dynamicFootPosition.x = footPosX.update();
     dynamicFootPosition.y = footPosY.update();
@@ -162,12 +160,14 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
     stepEndpointX *= -1;
   if (controlCoordinateY < 0)
     stepEndpointY *= -1;
-  // The formula for the y axis preserves the sign of movementGradient! 
 
   if ((_legMode == ACTIVE_WALKING_DRAW_BACK) || (_legMode == FIRST_STEP_DRAW_BACK)) {
     stepEndpointX *= -1;
     stepEndpointY *= -1;
   }
+
+  if ((_legID == LEG_2) || (_legID == LEG_3))
+    stepEndpointX *= -1;
 
   // flip the result (kinematics thinks that x is moving forwards/backwards while looking down the robot)
   // stepPlanner thinks that y is moving forwards/backwards
@@ -213,3 +213,5 @@ void StepPlanner::reset() {
   footPosX.go(0);
   footPosY.go(0);
 }
+
+
