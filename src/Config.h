@@ -15,7 +15,7 @@
 #define SHOULDER_FOOT_MIN 100
 
 
-#define TIME_TO_UPDATE          11    // The time between each update of the state machine + 1 i.e. this will update every 10 millis
+#define TIME_TO_UPDATE          6    // The time between each update of the state machine + 1 i.e. this will update every 10 millis
 #define GAIT_POSITION_INCREMENT 1     // The amount incremented and decremented to footXYDrop
 
 // Maximum motor speed; milliseconds per 180 degrees factor; NOT DEGREES PER MILLISECONDS I.E. SPEED (determined experimentally) this is 0.6 sec / 180 degrees (actual value is 0.52 sec)
@@ -44,7 +44,7 @@ typedef enum {
 } MotorID;
 
 typedef enum {
-  STATIC_STANDING, WALKING
+  STATIC_STANDING, STAND_PENDING, WALKING
 } ROBOT_MODE;
 
 #endif

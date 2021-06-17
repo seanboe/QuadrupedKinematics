@@ -9,6 +9,7 @@ StepPlanner::StepPlanner(LegID legID) {
 */
 void StepPlanner::init() {
 
+  _wasAtOrigin = false;
   _legMode = STANDING;
   _gaitType = DEFAULT_GAIT;
 
@@ -42,7 +43,6 @@ void StepPlanner::setGait(GaitType gaitType) {
  *    @returns True when the foot position was updated, false if it wasn't.
 */
 bool StepPlanner::update(ROBOT_MODE robotMode) {
-
   // Make sure that the leg needs to stand AND the robot should stand. 
   if ((_legMode == STANDING) && (robotMode == WALKING)) {
     _previousUpdateTime = (millis() - 1);
@@ -72,11 +72,11 @@ bool StepPlanner::update(ROBOT_MODE robotMode) {
     dynamicFootPosition.y = footPosY.update();
     dynamicFootPosition.z = getStepHeight(_footXYDrop, _legMode);
 
-    Serial.println(_footXYDrop);
-    Serial.print(", ");
-    Serial.println(footPosX.update());
-    Serial.print(", ");
-    Serial.println(footPosY.update());
+    // Serial.println(_footXYDrop);
+    // Serial.print(", ");
+    // Serial.println(footPosX.update());
+    // Serial.print(", ");
+    // Serial.println(footPosY.update());
 
 
     switch (_legMode) {
@@ -140,51 +140,64 @@ int16_t StepPlanner::getStepHeight(int16_t footXYDropL, LegMode legMode) {
 
 /*!
  *    @brief Allows you to set the endpoint of the step depending on the direction you command
- *    @param controllCoordinateY X direction of the controller coordinate (yes, flipped)
- *    @param controllCoordinateX Y direction of the controller coordinate (yed, flipped)
+ *    @param controllCoordinateX X direction of the controller coordinate 
+ *    @param controllCoordinateY Y direction of the controller coordinate 
  *    @returns True if it's time to update the endpoint, false if it's not.
 */
-void StepPlanner::setStepEndpoint(int16_t controlCoordinateY, int16_t controlCoordinateX, ROBOT_MODE robotMode) {
+void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY) {
 
+  float stepEndpointX = 0.0;
+  float stepEndpointY = 0.0;
 
   float periodHalf = _gaits[_gaitType].periodHalf;
+  float movementGradient = 0;
 
-  // Stopped walking
-  if (robotMode == STATIC_STANDING) {
-    _stepEndpoint.x = 0;
-    _stepEndpoint.y = 0;
+  // Check if stopped walking
+  if (controlCoordinateX == 0 && controlCoordinateY == 0) {
+    Serial.println("standing");
+    _stepEndpoint.x = 0.0;
+    _stepEndpoint.y = 0.0;
     footPosX.go(_stepEndpoint.x);
     footPosY.go(_stepEndpoint.y);
     _legMode = STANDING;
     return;
   }
+
   // make sure that math works (vertical lines are undefined)
   else if (controlCoordinateX == 0) {
-    _stepEndpoint.x = 0;
-    _stepEndpoint.y = periodHalf/2;
+    stepEndpointX = 0;
+    stepEndpointY = periodHalf/2;
   }
   else {
-    float movementGradient = (controlCoordinateY / controlCoordinateX);
+    movementGradient = (controlCoordinateY / controlCoordinateX);
 
-    _stepEndpoint.x = ((periodHalf/2) / sqrt(1 + pow(movementGradient, 2)));
-    _stepEndpoint.y = (((periodHalf/2) * movementGradient) / sqrt(1 + pow(movementGradient, 2)));
+    stepEndpointX = ((periodHalf/2) / sqrt(1 + pow(movementGradient, 2)));
+    stepEndpointY = (((periodHalf/2) * abs(movementGradient)) / sqrt(1 + pow(movementGradient, 2)));
   }
 
   if (controlCoordinateX < 0)
-    _stepEndpoint.x *= -1;
+    stepEndpointX *= -1;
   if (controlCoordinateY < 0)
-    _stepEndpoint.y *= -1;
+    stepEndpointY *= -1;
+  // The formula for the y axis preserves the sign of movementGradient! 
 
   if ((_legMode == ACTIVE_WALKING_DRAW_BACK) || (_legMode == FIRST_STEP_DRAW_BACK)) {
-    _stepEndpoint.x *= -1;
-    _stepEndpoint.y *= -1;
+    stepEndpointX *= -1;
+    stepEndpointY *= -1;
   }
+
+  // flip the result (kinematics thinks that x is moving forwards/backwards while looking down the robot)
+  // stepPlanner thinks that y is moving forwards/backwards
+  _stepEndpoint.x = stepEndpointY;
+  _stepEndpoint.y = stepEndpointX;
 
   long completionTime = (long)((TIME_TO_UPDATE - 1) * (periodHalf/(2 * GAIT_POSITION_INCREMENT)));
 
   // Ideally, the interpolation objects will effectively track the position of footXY drop.
   // When it reaches its maximum point, so does footXY drop (likewise when they are 0).
-  // Serial.println(_stepEndpoint.x);
+  Serial.println(stepEndpointX);
+  Serial.println(stepEndpointY);
+
   footPosX.go(_stepEndpoint.x, completionTime, LINEAR, FORTHANDBACK);
   footPosY.go(_stepEndpoint.y, completionTime, LINEAR, FORTHANDBACK);
 };
@@ -195,7 +208,11 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateY, int16_t controlCoo
  *    @returns True if it's time to update the endpoint, false if it's not.
 */
 bool StepPlanner::footAtOrigin() {
-  if (_footXYDrop != 0) 
-    return false;
-  return true;
+  if ((_footXYDrop == 0) && (_wasAtOrigin == false)) {
+    _wasAtOrigin = true;
+    return true;
+  }
+  if ((_footXYDrop != 0))
+    _wasAtOrigin = false;
+  return false;
 }

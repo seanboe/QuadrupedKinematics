@@ -17,6 +17,8 @@ class Quadruped {
 
   private:
 
+    void _setMode(ROBOT_MODE robotMode);
+
     StepPlanner leg1StepPlanner;
     Kinematics  leg1Kinematics;
 
