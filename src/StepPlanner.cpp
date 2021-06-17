@@ -5,13 +5,16 @@ StepPlanner::StepPlanner(void) {};
 /*!
  *    @brief Initializes the gaits and sets up the leg modes
 */
-void StepPlanner::init(LegID legID, int16_t robotHeight) {
+void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t robotHeight) {
 
   _legID = legID;
 
   _legMode = STANDING;
   _gaitType = DEFAULT_GAIT;
   _robotHeight = robotHeight;
+
+  _offsetX = offsetX;
+  _offsetY = offsetY;
 
   _gaits[TROT].amplitude = 50;
   _gaits[TROT].periodHalf = 140;
@@ -35,30 +38,14 @@ void StepPlanner::setGait(GaitType gaitType) {
 */
 bool StepPlanner::update(ROBOT_MODE robotMode) {
 
-  // Make sure that the leg needs to stand AND the robot should stand. 
-  if ((_legMode == STANDING) && (robotMode == WALKING)) {
-    _previousUpdateTime = (millis() - 1);
-
-    /// Determine which foot goes first
-    if (_legID == LEG_1 || _legID == LEG_3) {
-      _legMode = FIRST_STEP_ARC;
-      // _footXYDrop  = 0;
-    }
-    else if (_legID == LEG_2 || _legID == LEG_4) {
-      _legMode = FIRST_STEP_DRAW_BACK;
-      // _footXYDrop  = 0;
-    }
-    return true;
-  }
-
   float periodHalf = _gaits[_gaitType].periodHalf;
 
   if ((millis() - _previousUpdateTime) % TIME_TO_UPDATE == 0) {
 
     // For legs 2 and 3, the negative and positive parts of the x axis are flipped
 
-    dynamicFootPosition.x = footPosX.update();
-    dynamicFootPosition.y = footPosY.update();
+    dynamicFootPosition.x = footPosX.update() + _offsetX;
+    dynamicFootPosition.y = footPosY.update() + _offsetY;
     dynamicFootPosition.z = getStepHeight(_footXYDrop, _legMode);
 
     switch (_legMode) {
@@ -126,7 +113,11 @@ int16_t StepPlanner::getStepHeight(int16_t footXYDropL, LegMode legMode) {
  *    @param controllCoordinateY Y direction of the controller coordinate 
  *    @returns True if it's time to update the endpoint, false if it's not.
 */
-void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY) {
+void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, ROBOT_MODE robotMode) {
+
+  // If this is the first step, it must be determined whether to arc or draw back
+  // and the time of last update must be set.
+  if (_setFirstStep(robotMode)) _previousUpdateTime = (millis() - 1);
 
   float stepEndpointX = 0.0;
   float stepEndpointY = 0.0;
@@ -214,4 +205,22 @@ void StepPlanner::reset() {
   footPosY.go(0);
 }
 
-
+/*!
+ *    @brief Sets the first step to FIRST_STEP_ARC or FIRST_STEP_DRAW_BACK
+ *    @param robotMode the mode of the robot.
+ *    @returns true if the first step was set (it was called on the first step),
+ *             false if it wasn't.
+*/
+bool StepPlanner::_setFirstStep(ROBOT_MODE robotMode) {
+  if ((_legMode == STANDING) && (robotMode == WALKING)) {
+    /// Determine which foot goes first
+    if (_legID == LEG_1 || _legID == LEG_3) {
+      _legMode = FIRST_STEP_ARC;
+    }
+    else if (_legID == LEG_2 || _legID == LEG_4) {
+      _legMode = FIRST_STEP_DRAW_BACK;
+    }
+    return true;
+  }
+  return false;
+}

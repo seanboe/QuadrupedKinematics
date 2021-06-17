@@ -36,6 +36,9 @@ void Kinematics::init(LegID legID, int16_t inputX, int16_t inputY, int16_t input
   _legID = legID;
   _motors = legMotors;
 
+  // Set inputY = 0 to under the shoulder
+  inputY += LIMB_1;
+
   // Solve for the initial foot position
   solveFootPosition(inputX, inputY, inputZ, &_motors[_indexOfMotor(_legID, M1)].angleDegrees, &_motors[_indexOfMotor(_legID, M2)].angleDegrees, &_motors[_indexOfMotor(_legID, M3)].angleDegrees);
 

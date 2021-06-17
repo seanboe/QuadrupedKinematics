@@ -33,10 +33,10 @@ class StepPlanner {
 
   public:
     StepPlanner();
-    void init(LegID legID, int16_t robotHeight);
+    void init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t robotHeight);
     void setGait(GaitType gaitType);
     bool update(ROBOT_MODE robotMode);
-    void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY);
+    void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, ROBOT_MODE robotMode);
     int16_t getStepHeight(int16_t footXYDropL, LegMode movementType);
     bool footAtOrigin();
     void reset();
@@ -45,12 +45,17 @@ class StepPlanner {
 
   private: 
 
+    bool _setFirstStep(ROBOT_MODE robotMode);
+
+    LegID _legID; 
+    int16_t _robotHeight;
+    int16_t _offsetX;
+    int16_t _offsetY;
+
     rampFloat footPosX;
     rampFloat footPosY;
 
-    bool _wasAtOrigin;
-
-    LegID _legID;     
+    bool _wasAtOrigin;    
 
     Gait _gaits[NUMBER_OF_GAITS];
 
@@ -63,7 +68,6 @@ class StepPlanner {
     LegMode _legMode; 
     GaitType _gaitType;
 
-    int16_t _robotHeight;
 
 };
 
