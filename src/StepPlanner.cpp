@@ -16,8 +16,8 @@ void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t ro
   _offsetX = offsetX;
   _offsetY = offsetY;
 
-  _gaits[TROT].amplitude = 50;
-  _gaits[TROT].periodHalf = 140;
+  _gaits[TROT].amplitude = 35;
+  _gaits[TROT].periodHalf = 70;
 
   reset();
 }
