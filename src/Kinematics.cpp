@@ -6,9 +6,7 @@
 /*!
  *    @param  legID Leg number. Numbering follows the quadrants of a unit circle.
  */
-Kinematics::Kinematics(LegID legID) {
-  _legID = legID;
-};
+Kinematics::Kinematics() {};
 
 
 // *****************Private Functions*****************
@@ -34,8 +32,12 @@ uint16_t Kinematics::_indexOfMotor(LegID leg, MotorID motor) {
  *    @param  inputZ startup z-axis coordinate
  *    @param  legMotors array of Motor variables for each motor
  */
-void Kinematics::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[]) {
+void Kinematics::init(LegID legID, int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[]) {
+  _legID = legID;
   _motors = legMotors;
+
+  // Set inputY = 0 to under the shoulder
+  inputY += LIMB_1;
 
   // Solve for the initial foot position
   solveFootPosition(inputX, inputY, inputZ, &_motors[_indexOfMotor(_legID, M1)].angleDegrees, &_motors[_indexOfMotor(_legID, M2)].angleDegrees, &_motors[_indexOfMotor(_legID, M3)].angleDegrees);
@@ -67,6 +69,9 @@ void Kinematics::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legM
  *    @param  inputZ z-axis coordinate
  */
 void Kinematics::setFootEndpoint(int16_t inputX, int16_t inputY, int16_t inputZ) {
+
+  // Set inputY = 0 to under the shoulder
+  inputY += LIMB_1;
 
   solveFootPosition(inputX, inputY, inputZ, &_motors[_indexOfMotor(_legID, M1)].angleDegrees, &_motors[_indexOfMotor(_legID, M2)].angleDegrees, &_motors[_indexOfMotor(_legID, M3)].angleDegrees);
 
