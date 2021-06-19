@@ -13,11 +13,10 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
 
   for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
     LegID LEG = _enumFromIndex(leg);
-    // LegID LEG = LEG_1;
     legStepPlanner[leg].init(LEG, inputX, inputY, inputZ);
     legKinematics[leg].init(LEG, inputX, inputY, inputZ, legMotors);
   }
-}
+};
 
 void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
   if ((controlCoordinateX == 0) && (controlCoordinateY == 0) && _robotMode != STATIC_STANDING) {

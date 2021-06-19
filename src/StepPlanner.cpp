@@ -4,6 +4,10 @@ StepPlanner::StepPlanner(void) {};
 
 /*!
  *    @brief Initializes the gaits and sets up the leg modes
+ *    @param legID The leg this stepPlanner object is used for
+ *    @param offsetX The offset x direction from x = 0... you can have the walking occur further back or further forwards.
+ *    @param offsetY The offset y direction from y = 0... you can have the walking occur further right or further left.
+ *    @param robotHeight the default hieght of the robot. Every step will end in the leg being this height
 */
 void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t robotHeight) {
 
@@ -108,7 +112,8 @@ int16_t StepPlanner::getStepHeight(int16_t footXYDropL, LegMode legMode) {
 };
 
 /*!
- *    @brief Allows you to set the endpoint of the step depending on the direction you command
+ *    @brief Allows you to set the endpoint of the step depending on the direction you command.
+            This also handles whether the foot is taking its first or last step. 
  *    @param controllCoordinateX X direction of the controller coordinate 
  *    @param controllCoordinateY Y direction of the controller coordinate 
  *    @returns True if it's time to update the endpoint, false if it's not.
@@ -147,16 +152,21 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
     stepEndpointY = (((periodHalf/2) * abs(movementGradient)) / sqrt(1 + pow(movementGradient, 2)));
   }
 
-  if (controlCoordinateX < 0)
-    stepEndpointX *= -1;
-  if (controlCoordinateY < 0)
-    stepEndpointY *= -1;
+  // verify that the direction is correct. The quadrant of movement must 
+  // be accounted for in order to match the joystick. 
+  if (controlCoordinateX < 0) stepEndpointX *= -1;
+  if (controlCoordinateY < 0) stepEndpointY *= -1;
 
+  // drawback gaits are pushing to a position opposite from the arc position
   if ((_legMode == ACTIVE_WALKING_DRAW_BACK) || (_legMode == FIRST_STEP_DRAW_BACK)) {
     stepEndpointX *= -1;
     stepEndpointY *= -1;
   }
 
+  // The kinematics engine thinks that specifying a negative y distance
+  // means that the foot should move into the robot. If legs 2 or 3 need to 
+  // move positively right (positive stepEndpoint), they are actually moving 
+  // in the negative direction for kinematics. 
   if ((_legID == LEG_2) || (_legID == LEG_3))
     stepEndpointX *= -1;
 
@@ -175,6 +185,10 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
 };
 
 
+// footAtOrigin updates whenever footXYDrop == 0 since this is the only time that all feet 
+// can be updated with the same endpoint and have the same distance to travel in order to get
+// to the endpoint. While the step could be updated every cycle, this reduces responsivity
+// (the current setup essentially allows for an update every half-cycle).
 /*!
  *    @brief Used to figure out if it's time to update the step endpoint
  *    @returns True if it's time to update the endpoint, false if it's not.
@@ -212,15 +226,32 @@ void StepPlanner::reset() {
  *             false if it wasn't.
 */
 bool StepPlanner::_setFirstStep(ROBOT_MODE robotMode) {
+
   if ((_legMode == STANDING) && (robotMode == WALKING)) {
-    /// Determine which foot goes first
+
+#if defined(RIGHT_FOOTED)
+
     if (_legID == LEG_1 || _legID == LEG_3) {
       _legMode = FIRST_STEP_ARC;
     }
     else if (_legID == LEG_2 || _legID == LEG_4) {
       _legMode = FIRST_STEP_DRAW_BACK;
     }
+
+#elif defined(LEFT_FOOTED)
+
+    if (_legID == LEG_1 || _legID == LEG_3) {
+      _legMode = FIRST_STEP_DRAW_BACK;
+    }
+    else if (_legID == LEG_2 || _legID == LEG_4) {
+      _legMode = FIRST_STEP_ARC;
+    }
+#else
+#error You must define whether your robot is RIGHT_FOOTED or LEFT_FOOTED in Config.h
+#endif
+
     return true;
   }
+
   return false;
 }
