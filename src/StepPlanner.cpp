@@ -21,7 +21,7 @@ void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t ro
   _offsetY = offsetY;
 
   _gaits[TROT].amplitude = 35;
-  _gaits[TROT].periodHalf = 70;
+  _gaits[TROT].periodHalf = 50;
 
   reset();
 }
@@ -103,7 +103,8 @@ int16_t StepPlanner::getStepHeight(int16_t footXYDropL, LegMode legMode) {
     case FIRST_STEP_ARC:           stepHeight = _robotHeight - lrint( (amplitude/2) * cos(PI * (footXYDropL - (periodHalf/4))/(periodHalf/2) ) ); break;
     case FIRST_STEP_DRAW_BACK:     stepHeight = _robotHeight - 0; break;
     case ACTIVE_WALKING_ARC:       stepHeight = _robotHeight - lrint( amplitude * cos( (PI * (footXYDropL)/periodHalf) ) ); break;
-    case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight - 0; break;
+    // case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight - 0; break;
+    case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight + lrint( (amplitude/DRAW_BACK_AMPLITUDE_REDUCTION) * cos(PI * (footXYDropL)/periodHalf ) ); break;
     case STANDING:                 stepHeight = _robotHeight - 0;
   }
 
