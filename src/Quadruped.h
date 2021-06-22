@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include "stepPlanner.h"
 #include "Kinematics.h"
-#include "Config.h"
+#include "quadruped-config.h"
 
 class Quadruped {
   public:
@@ -19,18 +19,6 @@ class Quadruped {
 
     void _setMode(ROBOT_MODE robotMode);
     LegID _enumFromIndex(int8_t index);
-
-    // StepPlanner leg1StepPlanner;
-    // Kinematics  leg1Kinematics;
-
-    // StepPlanner leg2StepPlanner;
-    // Kinematics  leg2Kinematics;
-
-    // StepPlanner leg3StepPlanner;
-    // Kinematics  leg3Kinematics;
-
-    // StepPlanner leg4StepPlanner;
-    // Kinematics  leg4Kinematics;
 
     StepPlanner legStepPlanner[ROBOT_LEG_COUNT];
     Kinematics  legKinematics[ROBOT_LEG_COUNT];

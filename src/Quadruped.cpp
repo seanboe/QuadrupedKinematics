@@ -13,13 +13,15 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
 
   for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
     LegID LEG = _enumFromIndex(leg);
-    // LegID LEG = LEG_1;
     legStepPlanner[leg].init(LEG, inputX, inputY, inputZ);
     legKinematics[leg].init(LEG, inputX, inputY, inputZ, legMotors);
   }
-}
+};
 
 void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
+
+#if !defined(STANDING_TROT)
+
   if ((controlCoordinateX == 0) && (controlCoordinateY == 0) && _robotMode != STATIC_STANDING) {
     _setMode(STAND_PENDING);
   }
@@ -52,6 +54,32 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
       }
     }
   }
+
+#elif defined(STANDING_TROT)
+
+  if (((controlCoordinateX != 0) || (controlCoordinateY != 0)) && (_robotMode == STATIC_STANDING)){
+    _setMode(WALKING);
+    for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++)
+      legStepPlanner[leg].reset();
+  }
+
+  if ((_robotMode == WALKING)) {
+    for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+      if (legStepPlanner[leg].footAtOrigin()) {
+        legStepPlanner[leg].setStepEndpoint(controlCoordinateX, controlCoordinateY, _robotMode);
+      }
+      if (legStepPlanner[leg].update(_robotMode)) {
+        int16_t inputX = legStepPlanner[leg].dynamicFootPosition.x;
+        int16_t inputY = legStepPlanner[leg].dynamicFootPosition.y;
+        int16_t inputZ = legStepPlanner[leg].dynamicFootPosition.z;
+
+        legKinematics[leg].setFootEndpoint(inputX, inputY, inputZ);
+      }
+    }
+  }
+
+
+#endif
 
 };
 
