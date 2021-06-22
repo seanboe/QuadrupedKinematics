@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include "stepPlanner.h"
 #include "Kinematics.h"
-#include "Config.h"
+#include "quadruped-config.h"
 
 class Quadruped {
   public:

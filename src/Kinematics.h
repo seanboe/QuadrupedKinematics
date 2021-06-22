@@ -8,7 +8,7 @@
 
 #include <Arduino.h>
 
-#include "Config.h"
+#include "quadruped-config.h"
 
 #include <Ramp.h>
 

@@ -20,8 +20,8 @@ void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t ro
   _offsetX = offsetX;
   _offsetY = offsetY;
 
-  _gaits[TROT].amplitude = 35;
-  _gaits[TROT].periodHalf = 50;
+  _gaits[TROT].amplitude = 20;
+  _gaits[TROT].periodHalf = 80;
 
   reset();
 }
@@ -137,7 +137,11 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
     _stepEndpoint.y = 0.0;
     footPosX.go(_stepEndpoint.x);
     footPosY.go(_stepEndpoint.y);
+
+#if !defined(STANDING_TROT)
     _legMode = STANDING;
+#endif
+
     return;
   }
 

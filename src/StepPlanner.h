@@ -2,7 +2,7 @@
 #define GAIT_PLANNER_H
 
 #include <Arduino.h>
-#include "Config.h"
+#include "quadruped-config.h"
 #include <Ramp.h>
 
 #define DEFAULT_GAIT  TROT
