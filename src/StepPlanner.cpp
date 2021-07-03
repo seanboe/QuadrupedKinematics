@@ -20,8 +20,8 @@ void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t ro
   _offsetX = offsetX;
   _offsetY = offsetY;
 
-  _gaits[TROT].amplitude = 20;
-  _gaits[TROT].periodHalf = 80;
+  _gaits[TROT].amplitude = 60;
+  _gaits[TROT].periodHalf = 40;
 
   reset();
 }
@@ -46,10 +46,21 @@ bool StepPlanner::update(ROBOT_MODE robotMode) {
 
   if ((millis() - _previousUpdateTime) % TIME_TO_UPDATE == 0) {
 
+    if (abs(_footXYDrop) == (periodHalf / 2)) {
+      footPosX.pause();
+      footPosY.pause();
+      delay(INTER_STEP_PAUSE);
+      footPosX.resume();
+      footPosY.resume();
+    }
+
+
     // For legs 2 and 3, the negative and positive parts of the x axis are flipped
 
-    dynamicFootPosition.x = footPosX.update() + _offsetX;
-    dynamicFootPosition.y = footPosY.update() + _offsetY;
+    // dynamicFootPosition.x = footPosX.update() + _offsetX;
+    // dynamicFootPosition.y = footPosY.update() + _offsetY;
+    dynamicFootPosition.x = _footXYDrop + _offsetX;
+    dynamicFootPosition.y = 0;
     dynamicFootPosition.z = getStepHeight(_footXYDrop, _legMode);
 
     switch (_legMode) {
@@ -119,10 +130,9 @@ int16_t StepPlanner::getStepHeight(int16_t footXYDropL, LegMode legMode) {
  *    @param controllCoordinateY Y direction of the controller coordinate 
  *    @returns True if it's time to update the endpoint, false if it's not.
 */
-void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, ROBOT_MODE robotMode) {
+void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, ROBOT_MODE robotMode, int16_t yawOffset) {
 
-  // If this is the first step, it must be determined whether to arc or draw back
-  // and the time of last update must be set.
+  // If this is the first step, it must be determined whether to arc or draw back and the time of last update must be set.
   if (_setFirstStep(robotMode)) _previousUpdateTime = (millis() - 1);
 
   float stepEndpointX = 0.0;
@@ -151,7 +161,7 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
     stepEndpointY = periodHalf/2;
   }
   else {
-    movementGradient = (controlCoordinateY / controlCoordinateX);
+    movementGradient = (float)(controlCoordinateY / controlCoordinateX);
 
     stepEndpointX = ((periodHalf/2) / sqrt(1 + pow(movementGradient, 2)));
     stepEndpointY = (((periodHalf/2) * abs(movementGradient)) / sqrt(1 + pow(movementGradient, 2)));
@@ -161,6 +171,13 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
   // be accounted for in order to match the joystick. 
   if (controlCoordinateX < 0) stepEndpointX *= -1;
   if (controlCoordinateY < 0) stepEndpointY *= -1;
+
+
+  // apply the yaw calculation
+  // if ((_legID == LEG_2) || (_legID == LEG_4))
+  //   stepEndpointX -= yawOffset;
+  // else if ((_legID == LEG_1) || (_legID == LEG_3))
+  //   stepEndpointX += yawOffset;
 
   // drawback gaits are pushing to a position opposite from the arc position
   if ((_legMode == ACTIVE_WALKING_DRAW_BACK) || (_legMode == FIRST_STEP_DRAW_BACK)) {
@@ -252,7 +269,7 @@ bool StepPlanner::_setFirstStep(ROBOT_MODE robotMode) {
       _legMode = FIRST_STEP_ARC;
     }
 #else
-#error You must define whether your robot is RIGHT_FOOTED or LEFT_FOOTED in Config.h
+#error You must define whether your robot is RIGHT_FOOTED or LEFT_FOOTED in quadruped-config.h
 #endif
 
     return true;

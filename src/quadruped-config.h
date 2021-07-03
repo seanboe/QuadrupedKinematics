@@ -9,6 +9,7 @@
 #define LIMB_2  125
 #define LIMB_3  125
 
+#define BODY_LENGTH 230   // Length of your robot front shoulder to the back shoulder. 
 
 // shoulder to foot length constraints in mm - determined using max/min angles for motors 2 & 3
 #define SHOULDER_FOOT_MAX 230
@@ -17,8 +18,9 @@
 
 //****************** walking/gait setup *******************
 
-#define TIME_TO_UPDATE          4    // The time between each update of the state machine + 1 i.e. this will update every 10 millis
+#define TIME_TO_UPDATE          6    // The time between each update of the state machine + 1 i.e. this will update every 10 millis
 #define GAIT_POSITION_INCREMENT 1     // The amount incremented and decremented to footXYDrop
+#define INTER_STEP_PAUSE        250
 
 // Uncomment whichever one you want, comment out the other. 
 #define RIGHT_FOOTED                  
@@ -26,13 +28,16 @@
 
 // #define STANDING_TROT
 
-#define DRAW_BACK_AMPLITUDE_REDUCTION 2 // the draw back phase of the step also has an amplitude proportional to the arc amplitude. 
+#define DRAW_BACK_AMPLITUDE_REDUCTION 4 // the draw back phase of the step also has an amplitude proportional to the arc amplitude. 
 
 //******************* kinematics setup *******************
 // Maximum motor speed; milliseconds per 180 degrees factor; NOT DEGREES PER MILLISECONDS I.E. SPEED (determined experimentally) this is 0.6 sec / 180 degrees (actual value is 0.52 sec)
 #define MAX_SPEED_INVERSE 3.5
 // #define MAX_SPEED_INVERSE   25
 
+
+//******************* Static movement constraints *******************
+#define YAW_MAXIMUM_ANGLE 20    // maximum yaw angle in degrees
 
 
 // DON'T CHANGE BELOW HERE

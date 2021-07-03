@@ -36,7 +36,7 @@ class StepPlanner {
     void init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t robotHeight);
     void setGait(GaitType gaitType);
     bool update(ROBOT_MODE robotMode);
-    void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, ROBOT_MODE robotMode);
+    void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, ROBOT_MODE robotMode, int16_t yawOffset);
     int16_t getStepHeight(int16_t footXYDropL, LegMode movementType);
     bool footAtOrigin();
     void reset();

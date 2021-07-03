@@ -12,8 +12,10 @@ class Quadruped {
 
     void init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[]);
 
-    void walk(int16_t controlCoordinateX, int16_t controlCoordinateY);
+    void walk(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t yawInput);
     bool justSetEndpoint = false;
+
+    int16_t computeYaw(int16_t yawAngle);
 
   private:
 

@@ -18,9 +18,7 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
   }
 };
 
-void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
-
-#if !defined(STANDING_TROT)
+void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t yawInput) {
 
   if ((controlCoordinateX == 0) && (controlCoordinateY == 0) && _robotMode != STATIC_STANDING) {
     _setMode(STAND_PENDING);
@@ -34,7 +32,7 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
   if ((_robotMode == WALKING) || (_robotMode == STAND_PENDING)) {
     for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
       if (legStepPlanner[leg].footAtOrigin()) {
-        legStepPlanner[leg].setStepEndpoint(controlCoordinateX, controlCoordinateY, _robotMode);
+        legStepPlanner[leg].setStepEndpoint(controlCoordinateX, controlCoordinateY, _robotMode, computeYaw(yawInput));
         if (_robotMode == STAND_PENDING) {
             while (!legStepPlanner[leg].update(_robotMode))
               ;
@@ -55,33 +53,25 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
     }
   }
 
-#elif defined(STANDING_TROT)
+};
 
-  if (((controlCoordinateX != 0) || (controlCoordinateY != 0)) && (_robotMode == STATIC_STANDING)){
-    _setMode(WALKING);
-    for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++)
-      legStepPlanner[leg].reset();
+
+
+
+int16_t Quadruped::computeYaw(int16_t yawAngle) {
+  // Map the controller input to a yaw angle. It is assumed that 0 degrees is when the body of the robot is straight
+  // forwards, with degrees increasing as you approach the rear of the robot. 
+  if (abs(yawAngle) > YAW_MAXIMUM_ANGLE) {
+    if (yawAngle > 0) yawAngle = YAW_MAXIMUM_ANGLE;
+    if (yawAngle < 0) yawAngle = -1 * YAW_MAXIMUM_ANGLE;
   }
 
-  if ((_robotMode == WALKING)) {
-    for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
-      if (legStepPlanner[leg].footAtOrigin()) {
-        legStepPlanner[leg].setStepEndpoint(controlCoordinateX, controlCoordinateY, _robotMode);
-      }
-      if (legStepPlanner[leg].update(_robotMode)) {
-        int16_t inputX = legStepPlanner[leg].dynamicFootPosition.x;
-        int16_t inputY = legStepPlanner[leg].dynamicFootPosition.y;
-        int16_t inputZ = legStepPlanner[leg].dynamicFootPosition.z;
+  // Serial.println(lrint((BODY_LENGTH / 2) * atan((yawAngle * PI)/180)));
 
-        legKinematics[leg].setFootEndpoint(inputX, inputY, inputZ);
-      }
-    }
-  }
-
-
-#endif
+  return lrint((BODY_LENGTH / 2) * atan((yawAngle * PI)/180));
 
 };
+
 
 LegID Quadruped::_enumFromIndex(int8_t index) {
   if (index == 0) return LEG_1;
@@ -89,4 +79,32 @@ LegID Quadruped::_enumFromIndex(int8_t index) {
   else if (index == 2) return LEG_3;
   else if (index == 3) return LEG_4;
   else return LEG_1;
-}
+};
+
+
+
+// #elif defined(STANDING_TROT)
+
+//   if (((controlCoordinateX != 0) || (controlCoordinateY != 0)) && (_robotMode == STATIC_STANDING)){
+//     _setMode(WALKING);
+//     for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++)
+//       legStepPlanner[leg].reset();
+//   }
+
+//   if ((_robotMode == WALKING)) {
+//     for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+//       if (legStepPlanner[leg].footAtOrigin()) {
+//         legStepPlanner[leg].setStepEndpoint(controlCoordinateX, controlCoordinateY, _robotMode, computeYaw(yawInput));
+//       }
+//       if (legStepPlanner[leg].update(_robotMode)) {
+//         int16_t inputX = legStepPlanner[leg].dynamicFootPosition.x;
+//         int16_t inputY = legStepPlanner[leg].dynamicFootPosition.y;
+//         int16_t inputZ = legStepPlanner[leg].dynamicFootPosition.z;
+
+//         legKinematics[leg].setFootEndpoint(inputX, inputY, inputZ);
+//       }
+//     }
+//   }
+
+
+// #endif
