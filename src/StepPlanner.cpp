@@ -46,21 +46,21 @@ bool StepPlanner::update(ROBOT_MODE robotMode) {
 
   if ((millis() - _previousUpdateTime) % TIME_TO_UPDATE == 0) {
 
-    if (abs(_footXYDrop) == (periodHalf / 2)) {
-      footPosX.pause();
-      footPosY.pause();
-      delay(INTER_STEP_PAUSE);
-      footPosX.resume();
-      footPosY.resume();
-    }
+    // if (abs(_footXYDrop) == (periodHalf / 2)) {
+    //   footPosX.pause();
+    //   footPosY.pause();
+    //   delay(INTER_STEP_PAUSE);
+    //   footPosX.resume();
+    //   footPosY.resume();
+    // }
 
 
     // For legs 2 and 3, the negative and positive parts of the x axis are flipped
 
-    // dynamicFootPosition.x = footPosX.update() + _offsetX;
-    // dynamicFootPosition.y = footPosY.update() + _offsetY;
-    dynamicFootPosition.x = _footXYDrop + _offsetX;
-    dynamicFootPosition.y = 0;
+    dynamicFootPosition.x = footPosX.update() + _offsetX;
+    dynamicFootPosition.y = footPosY.update() + _offsetY;
+    // dynamicFootPosition.x = _footXYDrop + _offsetX;
+    // dynamicFootPosition.y = 0;
     dynamicFootPosition.z = getStepHeight(_footXYDrop, _legMode);
 
     switch (_legMode) {
