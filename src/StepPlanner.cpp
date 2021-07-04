@@ -19,6 +19,10 @@ void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t ro
   _offsetX = offsetX;
   _offsetY = offsetY;
 
+  _gait.amplitude = 60;
+  _gait.periodHalf = 80;
+  _gait.timeToUpdate = 10;
+
   returnToOrigin();
 }
 
@@ -33,11 +37,10 @@ bool StepPlanner::update() {
 
   if ((millis() - _previousUpdateTime) % (long)_gait.timeToUpdate == 0) {
 
-    // For legs 2 and 3, the negative and positive parts of the x axis are flipped
-
     dynamicFootPosition.x = footPosX.update() + _offsetX;
     dynamicFootPosition.y = footPosY.update() + _offsetY;
     dynamicFootPosition.z = getStepHeight(footDrop.update());
+    // dynamicFootPosition.z = 135;
 
     _previousUpdateTime = (millis() - 1);
     return true;
@@ -56,10 +59,13 @@ void StepPlanner::calculateStep(int16_t controlCoordinateX, int16_t controlCoord
 
   footPosX.go(_stepEndpoint.x, stepDuration, LINEAR, ONCEFORWARD);
   footPosY.go(_stepEndpoint.y, stepDuration, LINEAR, ONCEFORWARD);
-  footDrop.go(_gait.periodHalf, stepDuration, LINEAR, ONCEFORWARD);
+  footDrop.go(_gait.periodHalf / 2, stepDuration, LINEAR, ONCEFORWARD);
 }
 
 void StepPlanner::calculateDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration) {
+
+  Serial.println(_legID);
+  Serial.println("Here");
 
   _mode = WALKING;
   _walkingStage = ACTIVE_WALKING_DRAW_BACK;
@@ -68,7 +74,7 @@ void StepPlanner::calculateDrawBack(int16_t controlCoordinateX, int16_t controlC
 
   footPosX.go(_stepEndpoint.x, stepDuration, LINEAR, ONCEFORWARD);
   footPosY.go(_stepEndpoint.y, stepDuration, LINEAR, ONCEFORWARD);
-  footDrop.go(_gait.periodHalf, stepDuration, LINEAR, ONCEFORWARD);
+  footDrop.go(-1 * (_gait.periodHalf / 2), stepDuration, LINEAR, ONCEFORWARD);
 }
 
 void StepPlanner::updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY) {
@@ -144,7 +150,7 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
  *    @param legMode The mode/phase of walking the leg is in.
  *    @returns The hight that should be written to the legs i.e. foot z distance (foot-should) - curve hight at the given footXYDropL
 */
-int16_t StepPlanner::getStepHeight(int16_t footXYDropL) {
+int16_t StepPlanner::getStepHeight(float footXYDropL) {
 
   int16_t stepHeight = 0;
 
@@ -162,13 +168,13 @@ int16_t StepPlanner::getStepHeight(int16_t footXYDropL) {
     // case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight + lrint( (amplitude/DRAW_BACK_AMPLITUDE_REDUCTION) * cos(PI * (footXYDropL)/periodHalf ) ); break;
   }
 
-  return stepHeight;
+  return (int16_t)lrint(stepHeight);
 
 };
 
 void StepPlanner::returnToOrigin() {
-  footPosX.go(_offsetX);
-  footPosY.go(_offsetY);
+  footPosX.go(0);
+  footPosY.go(0);
   footDrop.go(0);
 }
 

@@ -34,7 +34,7 @@ class StepPlanner {
     void updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY);
     bool update();
 
-    int16_t getStepHeight(int16_t footXYDropL);
+    int16_t getStepHeight(float footXYDropL);
     void returnToOrigin();
     // bool footAtOrigin();
     // void reset();
