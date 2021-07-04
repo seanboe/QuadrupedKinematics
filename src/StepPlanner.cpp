@@ -14,25 +14,14 @@ void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t ro
   _legID = legID;
 
   _mode = STANDING;
-  _gaitType = DEFAULT_GAIT;
   _robotHeight = robotHeight;
 
   _offsetX = offsetX;
   _offsetY = offsetY;
 
-  _gaits[TROT].amplitude = 60;
-  _gaits[TROT].periodHalf = 40;
-
-  reset();
+  returnToOrigin();
 }
 
-/*!
- *    @brief Sets the walking giat. Should only be called when the robot is standing
-*/
-void StepPlanner::setGait(GaitType gaitType) {
-  if (_mode == STANDING)
-    _gaitType = gaitType;
-}
 
 /*!
  *    @brief Updates the position of the foot as the step progresses.
@@ -42,42 +31,14 @@ void StepPlanner::setGait(GaitType gaitType) {
 */
 bool StepPlanner::update() {
 
-  float periodHalf = _gait.periodHalf;
-
-  if ((millis() - _previousUpdateTime) % _gait.timeToUpdate == 0) {
+  if ((millis() - _previousUpdateTime) % (long)_gait.timeToUpdate == 0) {
 
     // For legs 2 and 3, the negative and positive parts of the x axis are flipped
 
     dynamicFootPosition.x = footPosX.update() + _offsetX;
     dynamicFootPosition.y = footPosY.update() + _offsetY;
-    dynamicFootPosition.z = getStepHeight(_footXYDrop);
+    dynamicFootPosition.z = getStepHeight(footDrop.update());
 
-    switch (_mode) {
-      case FIRST_STEP_ARC:            
-        _footXYDrop += GAIT_POSITION_INCREMENT; 
-        if (_footXYDrop == (periodHalf/2)) {
-          _walkingStage = ACTIVE_WALKING_DRAW_BACK;
-        }
-        break;
-      case FIRST_STEP_DRAW_BACK:      
-        _footXYDrop -= GAIT_POSITION_INCREMENT; 
-        if (_footXYDrop == -1*(periodHalf/2)) {
-          _walkingStage = ACTIVE_WALKING_ARC;
-        }
-        break;
-      case ACTIVE_WALKING_ARC:
-        _footXYDrop += GAIT_POSITION_INCREMENT;
-        if (_footXYDrop == (periodHalf/2)) {
-          _walkingStage = ACTIVE_WALKING_DRAW_BACK;
-        }
-        break;
-      case ACTIVE_WALKING_DRAW_BACK:
-        _footXYDrop -= GAIT_POSITION_INCREMENT;
-        if (_footXYDrop == -1*(periodHalf/2)) {
-          _walkingStage = ACTIVE_WALKING_ARC;
-        }
-        break;
-    }
     _previousUpdateTime = (millis() - 1);
     return true;
   }
@@ -86,33 +47,36 @@ bool StepPlanner::update() {
 
 
 
-void calculateStep(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration) {
+void StepPlanner::calculateStep(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration) {
 
+  _mode = WALKING;
   _walkingStage = ACTIVE_WALKING_ARC;
 
-  getStepEndpoint(controlCoordinateX, controlCoordinateY);
+  setStepEndpoint(controlCoordinateX, controlCoordinateY);
 
   footPosX.go(_stepEndpoint.x, stepDuration, LINEAR, ONCEFORWARD);
   footPosY.go(_stepEndpoint.y, stepDuration, LINEAR, ONCEFORWARD);
   footDrop.go(_gait.periodHalf, stepDuration, LINEAR, ONCEFORWARD);
 }
 
-void calculateDrawBack() {
+void StepPlanner::calculateDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration) {
+
+  _mode = WALKING;
   _walkingStage = ACTIVE_WALKING_DRAW_BACK;
 
-  getStepEndpoint(controlCoordinateX, controlCoordinateY);
+  setStepEndpoint(controlCoordinateX, controlCoordinateY);
 
   footPosX.go(_stepEndpoint.x, stepDuration, LINEAR, ONCEFORWARD);
   footPosY.go(_stepEndpoint.y, stepDuration, LINEAR, ONCEFORWARD);
   footDrop.go(_gait.periodHalf, stepDuration, LINEAR, ONCEFORWARD);
 }
 
-void updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY) {
+void StepPlanner::updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY) {
 
-  getStepEndpoint(controlCoordinateX, controlCoordinateY);
+  setStepEndpoint(newControlCoordinateX, newControlCoordinateY);
 
   // footPosY would work also
-  long timeLeft = (footPosX.getDuration - ((footPosX.getCompletion() / 100) * footPosX.getDuration));
+  long timeLeft = (footPosX.getDuration() - ((footPosX.getCompletion() / 100) * footPosX.getDuration()));
 
   footPosX.go(_stepEndpoint.x, timeLeft, LINEAR, ONCEFORWARD);
   footPosY.go(_stepEndpoint.y, timeLeft, LINEAR, ONCEFORWARD);
@@ -120,7 +84,7 @@ void updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY
 }
 
 
-void StepPlanner::getStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY) {
+void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY) {
 
   float stepEndpointX = 0.0;
   float stepEndpointY = 0.0;
@@ -174,12 +138,6 @@ void StepPlanner::getStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
 
 
 
-
-
-
-
-/// *************** EVERYTHING BELOW MAY BE WRONG ******************
-
 /*!
  *    @brief Performs the calculation of the arc itself ONLY... doesn't know where the foot actually is
  *    @param footXYDropL The x drop position of the foot.
@@ -190,139 +148,154 @@ int16_t StepPlanner::getStepHeight(int16_t footXYDropL) {
 
   int16_t stepHeight = 0;
 
-  float periodHalf = _gaits[_gaitType].periodHalf;
-  float amplitude = _gaits[_gaitType].amplitude;
+  float periodHalf = _gait.periodHalf;
+  float amplitude = _gait.amplitude;
+
+  if (_mode == STANDING)
+    return _robotHeight;
 
   switch (_walkingStage) {
     case FIRST_STEP_ARC:           stepHeight = _robotHeight - lrint( (amplitude/2) * cos(PI * (footXYDropL - (periodHalf/4))/(periodHalf/2) ) ); break;
     case FIRST_STEP_DRAW_BACK:     stepHeight = _robotHeight - 0; break;
     case ACTIVE_WALKING_ARC:       stepHeight = _robotHeight - lrint( amplitude * cos( (PI * (footXYDropL)/periodHalf) ) ); break;
-    // case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight - 0; break;
-    case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight + lrint( (amplitude/DRAW_BACK_AMPLITUDE_REDUCTION) * cos(PI * (footXYDropL)/periodHalf ) ); break;
+    case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight - 0; break;
+    // case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight + lrint( (amplitude/DRAW_BACK_AMPLITUDE_REDUCTION) * cos(PI * (footXYDropL)/periodHalf ) ); break;
   }
 
   return stepHeight;
 
 };
 
-
-/*!
- *    @brief Allows you to set the endpoint of the step depending on the direction you command.
-            This also handles whether the foot is taking its first or last step. 
- *    @param controlCoordinateX X direction of the controller coordinate 
- *    @param controlCoordinateY Y direction of the controller coordinate 
- *    @returns True if it's time to update the endpoint, false if it's not.
-*/
-bool StepPlanner::getStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, RobotMode robotMode, int16_t yawOffset) {
-
-  if (!footAtOrigin())
-    return false;
-
-  float stepEndpointX = 0.0;
-  float stepEndpointY = 0.0;
-
-  if (_mode == STANDING && robotMode == WALKING) {
-    // We need to start walking!
-    _setFirstStep(robotMode) 
-    _previousUpdateTime = (millis() - 1);
-    _mode = WALKING;
-  }
-
-  if (_mode == WALKING && robotMode == WALKING) {
-    // Walking Ongoing
-    getWalkEndpoint(controlCoordinateX, controlCoordinateY, &stepEndpointX, &stepEndpointY);
-  }
-  else if (_mode == WALKING && robotMode == STANDING) {
-    // We need to be standing!
-    _stepEndpoint.x = 0.0;
-    _stepEndpoint.y = 0.0;
-  }
-
-  // flip the result (kinematics thinks that x is moving forwards/backwards while looking down the robot)
-  // stepPlanner thinks that y is moving forwards/backwards
-  _stepEndpoint.x = stepEndpointY;
-  _stepEndpoint.y = stepEndpointX;
-
-  long completionTime = (long)((TIME_TO_UPDATE - 1) * (periodHalf/(2 * GAIT_POSITION_INCREMENT)));
-
-  // Ideally, the interpolation objects will effectively track the position of footXY drop.
-  // When it reaches its maximum point, so does footXY drop (likewise when they are 0).
-
-  footPosX.go(_stepEndpoint.x, completionTime, LINEAR, FORTHANDBACK);
-  footPosY.go(_stepEndpoint.y, completionTime, LINEAR, FORTHANDBACK);
-
-  return true;
-
-};
-
-
-// footAtOrigin updates whenever footXYDrop == 0 since this is the only time that all feet 
-// can be updated with the same endpoint and have the same distance to travel in order to get
-// to the endpoint. While the step could be updated every cycle, this reduces responsivity
-// (the current setup essentially allows for an update every half-cycle).
-/*!
- *    @brief Used to figure out if it's time to update the step endpoint
- *    @returns True if it's time to update the endpoint, false if it's not.
-*/
-bool StepPlanner::footAtOrigin() {
-  if ((_footXYDrop == 0) && (_wasAtOrigin == false)) {
-    _wasAtOrigin = true;
-    return true;
-  }
-  if ((_footXYDrop != 0))
-    _wasAtOrigin = false;
-  return false;
-};
+void StepPlanner::returnToOrigin() {
+  footPosX.go(_offsetX);
+  footPosY.go(_offsetY);
+  footDrop.go(0);
+}
 
 
 
 
 
+/// *************** EVERYTHING BELOW MAY BE WRONG ******************
 
-/*!
- *    @brief Resets all dynamic gait parameters
-*/
-void StepPlanner::reset() {
-  dynamicFootPosition.x = 0;
-  dynamicFootPosition.y = 0;
-  dynamicFootPosition.z = _robotHeight;
 
-  _wasAtOrigin = false;
-  _footXYDrop = 0;
+// /*!
+//  *    @brief Allows you to set the endpoint of the step depending on the direction you command.
+//             This also handles whether the foot is taking its first or last step. 
+//  *    @param controlCoordinateX X direction of the controller coordinate 
+//  *    @param controlCoordinateY Y direction of the controller coordinate 
+//  *    @returns True if it's time to update the endpoint, false if it's not.
+// */
+// bool StepPlanner::getStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, RobotMode robotMode, int16_t yawOffset) {
 
-  footPosX.go(0);
-  footPosY.go(0);
-};
+//   if (!footAtOrigin())
+//     return false;
 
-/*!
- *    @brief Sets the first step to FIRST_STEP_ARC or FIRST_STEP_DRAW_BACK
- *    @param robotMode the mode of the robot.
- *    @returns true if the first step was set (it was called on the first step),
- *             false if it wasn't.
-*/
-void StepPlanner::_setFirstStep() {
+//   float stepEndpointX = 0.0;
+//   float stepEndpointY = 0.0;
 
-#if defined(RIGHT_FOOTED)
+//   if (_mode == STANDING && robotMode == WALKING) {
+//     // We need to start walking!
+//     _setFirstStep(robotMode) 
+//     _previousUpdateTime = (millis() - 1);
+//     _mode = WALKING;
+//   }
 
-    if (_legID == LEG_1 || _legID == LEG_3) {
-      _walkingStage = FIRST_STEP_ARC;
-    }
-    else if (_legID == LEG_2 || _legID == LEG_4) {
-      _walkingStage = FIRST_STEP_DRAW_BACK;
-    }
+//   if (_mode == WALKING && robotMode == WALKING) {
+//     // Walking Ongoing
+//     getWalkEndpoint(controlCoordinateX, controlCoordinateY, &stepEndpointX, &stepEndpointY);
+//   }
+//   else if (_mode == WALKING && robotMode == STANDING) {
+//     // We need to be standing!
+//     _stepEndpoint.x = 0.0;
+//     _stepEndpoint.y = 0.0;
+//   }
 
-#elif defined(LEFT_FOOTED)
+//   // flip the result (kinematics thinks that x is moving forwards/backwards while looking down the robot)
+//   // stepPlanner thinks that y is moving forwards/backwards
+//   _stepEndpoint.x = stepEndpointY;
+//   _stepEndpoint.y = stepEndpointX;
 
-    if (_legID == LEG_1 || _legID == LEG_3) {
-      _walkingStage = FIRST_STEP_DRAW_BACK;
-    }
-    else if (_legID == LEG_2 || _legID == LEG_4) {
-      _walkingStage = FIRST_STEP_ARC;
-    }
-#else
-#error You must define whether your robot is RIGHT_FOOTED or LEFT_FOOTED in quadruped-config.h
-#endif
-};
+//   long completionTime = (long)((TIME_TO_UPDATE - 1) * (periodHalf/(2 * GAIT_POSITION_INCREMENT)));
+
+//   // Ideally, the interpolation objects will effectively track the position of footXY drop.
+//   // When it reaches its maximum point, so does footXY drop (likewise when they are 0).
+
+//   footPosX.go(_stepEndpoint.x, completionTime, LINEAR, FORTHANDBACK);
+//   footPosY.go(_stepEndpoint.y, completionTime, LINEAR, FORTHANDBACK);
+
+//   return true;
+
+// };
+
+
+// // footAtOrigin updates whenever footXYDrop == 0 since this is the only time that all feet 
+// // can be updated with the same endpoint and have the same distance to travel in order to get
+// // to the endpoint. While the step could be updated every cycle, this reduces responsivity
+// // (the current setup essentially allows for an update every half-cycle).
+// /*!
+//  *    @brief Used to figure out if it's time to update the step endpoint
+//  *    @returns True if it's time to update the endpoint, false if it's not.
+// */
+// bool StepPlanner::footAtOrigin() {
+//   if ((_footXYDrop == 0) && (_wasAtOrigin == false)) {
+//     _wasAtOrigin = true;
+//     return true;
+//   }
+//   if ((_footXYDrop != 0))
+//     _wasAtOrigin = false;
+//   return false;
+// };
+
+
+
+
+
+
+// /*!
+//  *    @brief Resets all dynamic gait parameters
+// */
+// void StepPlanner::reset() {
+//   dynamicFootPosition.x = 0;
+//   dynamicFootPosition.y = 0;
+//   dynamicFootPosition.z = _robotHeight;
+
+//   _wasAtOrigin = false;
+//   _footXYDrop = 0;
+
+//   footPosX.go(0);
+//   footPosY.go(0);
+// };
+
+// /*!
+//  *    @brief Sets the first step to FIRST_STEP_ARC or FIRST_STEP_DRAW_BACK
+//  *    @param robotMode the mode of the robot.
+//  *    @returns true if the first step was set (it was called on the first step),
+//  *             false if it wasn't.
+// */
+// void StepPlanner::_setFirstStep() {
+
+// #if defined(RIGHT_FOOTED)
+
+//     if (_legID == LEG_1 || _legID == LEG_3) {
+//       _walkingStage = FIRST_STEP_ARC;
+//     }
+//     else if (_legID == LEG_2 || _legID == LEG_4) {
+//       _walkingStage = FIRST_STEP_DRAW_BACK;
+//     }
+
+// #elif defined(LEFT_FOOTED)
+
+//     if (_legID == LEG_1 || _legID == LEG_3) {
+//       _walkingStage = FIRST_STEP_DRAW_BACK;
+//     }
+//     else if (_legID == LEG_2 || _legID == LEG_4) {
+//       _walkingStage = FIRST_STEP_ARC;
+//     }
+// #else
+// #error You must define whether your robot is RIGHT_FOOTED or LEFT_FOOTED in quadruped-config.h
+// #endif
+// };
 
 
 

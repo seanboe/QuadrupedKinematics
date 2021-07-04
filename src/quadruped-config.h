@@ -59,6 +59,6 @@ typedef enum {
 
 typedef enum {
   STANDING = 0, STATIC_MOVEMENT, WALKING
-} ROBOT_MODE;
+} RobotMode;
 
 #endif

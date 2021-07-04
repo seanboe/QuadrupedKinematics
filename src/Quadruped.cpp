@@ -3,9 +3,9 @@
 
 Quadruped::Quadruped(void) {};
 
-void Quadruped::_setMode(RobotMode mode) {
-  _mode = mode;
-}
+// void Quadruped::_setMode(RobotMode mode) {
+//   _mode = mode;
+// }
 
 void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[]) {
 
@@ -18,43 +18,55 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
   }
 };
 
-void Quadruped::update(int16_t controlCoordinateX, int16_t controlCoordinateY) {
-  walk(controlCoordinateX, controlCoordinateY);
-}
+// void Quadruped::update(int16_t controlCoordinateX, int16_t controlCoordinateY) {
+//   legStepPlanner[0].calculateStep(controlCoordinateX, controlCoordinateY);
+// }
 
 
 
-void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t yawInput) {
+void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
 
-  if (((controlCoordinateX != 0) || (controlCoordinateY != 0)) && (_robotMode == STATIC_STANDING)){
-    _setMode(WALKING);
-    for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++)
-      legStepPlanner[leg].reset();
+  if (legStepPlanner[0].update()) {
+    int16_t inputX = legStepPlanner[0].dynamicFootPosition.x;
+    int16_t inputY = legStepPlanner[0].dynamicFootPosition.y;
+    int16_t inputZ = legStepPlanner[0].dynamicFootPosition.z;
+
+    legKinematics[0].setFootEndpoint(inputX, inputY, inputZ);
   }
 
-  if ((_mode == WALKING) || (_robotMode == STAND_PENDING)) {
-    for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
-      if (legStepPlanner[leg].footAtOrigin()) {
-        legStepPlanner[leg].setStepEndpoint(controlCoordinateX, controlCoordinateY, _robotMode, computeYaw(yawInput));
-        if (_robotMode == STAND_PENDING) {
-            while (!legStepPlanner[leg].update(_robotMode))
-              ;
-            int16_t inputX = legStepPlanner[leg].dynamicFootPosition.x;
-            int16_t inputY = legStepPlanner[leg].dynamicFootPosition.y;
-            int16_t inputZ = legStepPlanner[leg].dynamicFootPosition.z;
-            legKinematics[leg].setFootEndpoint(inputX, inputY, inputZ);
-            if (_enumFromIndex(leg) == LEG_4) _setMode(STATIC_STANDING);
-        }
-      }
-      if (legStepPlanner[leg].update(_robotMode)) {
-        int16_t inputX = legStepPlanner[leg].dynamicFootPosition.x;
-        int16_t inputY = legStepPlanner[leg].dynamicFootPosition.y;
-        int16_t inputZ = legStepPlanner[leg].dynamicFootPosition.z;
 
-        legKinematics[leg].setFootEndpoint(inputX, inputY, inputZ);
-      }
-    }
-  }
+  // if (((controlCoordinateX != 0) || (controlCoordinateY != 0)) && (_robotMode == STATIC_STANDING)){
+  //   _setMode(WALKING);
+  //   for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++)
+  //     legStepPlanner[leg].reset();
+  // }
+
+  // if ((_mode == WALKING) || (_robotMode == STAND_PENDING)) {
+  //   for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+  //     if (legStepPlanner[leg].footAtOrigin()) {
+  //       legStepPlanner[leg].setStepEndpoint(controlCoordinateX, controlCoordinateY, _robotMode, computeYaw(yawInput));
+  //       if (_robotMode == STAND_PENDING) {
+  //           while (!legStepPlanner[leg].update(_robotMode))
+  //             ;
+  //           int16_t inputX = legStepPlanner[leg].dynamicFootPosition.x;
+  //           int16_t inputY = legStepPlanner[leg].dynamicFootPosition.y;
+  //           int16_t inputZ = legStepPlanner[leg].dynamicFootPosition.z;
+  //           legKinematics[leg].setFootEndpoint(inputX, inputY, inputZ);
+  //           if (_enumFromIndex(leg) == LEG_4) _setMode(STATIC_STANDING);
+  //       }
+  //     }
+  //     if (legStepPlanner[leg].update(_robotMode)) {
+  //       int16_t inputX = legStepPlanner[leg].dynamicFootPosition.x;
+  //       int16_t inputY = legStepPlanner[leg].dynamicFootPosition.y;
+  //       int16_t inputZ = legStepPlanner[leg].dynamicFootPosition.z;
+
+  //       legKinematics[leg].setFootEndpoint(inputX, inputY, inputZ);
+  //     }
+  //   }
+  // }
+
+
+
 
 };
 

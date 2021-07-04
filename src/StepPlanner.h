@@ -9,7 +9,7 @@
 typedef struct {
   float amplitude;
   float periodHalf;    // It is assumed that the gait arc is symmetrical across the y axis; half the frequency is the amount it goes forward and backwards
-  float timeToUpdate;  // The time between updates
+  int16_t timeToUpdate;  // The time between updates
 } Gait;
 
 typedef struct {
@@ -28,18 +28,20 @@ class StepPlanner {
   public:
     StepPlanner();
     void init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t robotHeight);
-    void setGait(GaitType gaitType);
+    void calculateStep(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration);
+    void calculateDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration);
+    void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY);
+    void updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY);
     bool update();
-    bool setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, RobotMode robotMode, int16_t yawOffset);
+
     int16_t getStepHeight(int16_t footXYDropL);
-    bool footAtOrigin();
-    void reset();
+    void returnToOrigin();
+    // bool footAtOrigin();
+    // void reset();
 
     Coordinate dynamicFootPosition;
 
   private: 
-
-    void _getWalkEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t* stepEndpointX, int16_t* stepEndpointY)
 
     LegID _legID; 
     int16_t _robotHeight;
@@ -48,7 +50,7 @@ class StepPlanner {
 
     rampFloat footPosX;
     rampFloat footPosY;
-    rampFloat footDrop
+    rampFloat footDrop;
 
     bool _wasAtOrigin;    
 
