@@ -5,16 +5,11 @@
 #include "quadruped-config.h"
 #include <Ramp.h>
 
-#define DEFAULT_GAIT  TROT
-
-typedef enum {
-  TROT = 0
-} GaitType;
-#define NUMBER_OF_GAITS 1
 
 typedef struct {
   float amplitude;
   float periodHalf;    // It is assumed that the gait arc is symmetrical across the y axis; half the frequency is the amount it goes forward and backwards
+  float timeToUpdate;  // The time between updates
 } Gait;
 
 typedef struct {
@@ -25,9 +20,8 @@ typedef struct {
 
 typedef enum {
   FIRST_STEP_ARC, FIRST_STEP_DRAW_BACK,
-  ACTIVE_WALKING_ARC, ACTIVE_WALKING_DRAW_BACK,
-  STANDING
-} LegMode;
+  ACTIVE_WALKING_ARC, ACTIVE_WALKING_DRAW_BACK
+} StepStage;
 
 class StepPlanner {
 
@@ -35,9 +29,9 @@ class StepPlanner {
     StepPlanner();
     void init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t robotHeight);
     void setGait(GaitType gaitType);
-    bool update(ROBOT_MODE robotMode);
-    void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, ROBOT_MODE robotMode, int16_t yawOffset);
-    int16_t getStepHeight(int16_t footXYDropL, LegMode movementType);
+    bool update();
+    bool setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, RobotMode robotMode, int16_t yawOffset);
+    int16_t getStepHeight(int16_t footXYDropL);
     bool footAtOrigin();
     void reset();
 
@@ -45,7 +39,7 @@ class StepPlanner {
 
   private: 
 
-    bool _setFirstStep(ROBOT_MODE robotMode);
+    void _getWalkEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t* stepEndpointX, int16_t* stepEndpointY)
 
     LegID _legID; 
     int16_t _robotHeight;
@@ -54,19 +48,18 @@ class StepPlanner {
 
     rampFloat footPosX;
     rampFloat footPosY;
+    rampFloat footDrop
 
     bool _wasAtOrigin;    
-
-    Gait _gaits[NUMBER_OF_GAITS];
-
-    int16_t _footXYDrop; // the position of the foot on the x/y plane. It moves underneath the foot.
 
     long _previousUpdateTime;
 
     Coordinate _stepEndpoint;
 
-    LegMode _legMode; 
-    GaitType _gaitType;
+    RobotMode _mode; 
+    StepStage _walkingStage;
+
+    Gait _gait;
 
 
 };

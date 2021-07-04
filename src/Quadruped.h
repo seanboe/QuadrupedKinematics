@@ -13,7 +13,7 @@ class Quadruped {
     void init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[]);
 
     void walk(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t yawInput);
-    bool justSetEndpoint = false;
+    void update(int16_t controlCoordinateX, int16_t controlCoordinateY);
 
     int16_t computeYaw(int16_t yawAngle);
 
@@ -25,7 +25,7 @@ class Quadruped {
     StepPlanner legStepPlanner[ROBOT_LEG_COUNT];
     Kinematics  legKinematics[ROBOT_LEG_COUNT];
 
-    ROBOT_MODE _robotMode;
+    RobotMode _mode;
 
 };
 

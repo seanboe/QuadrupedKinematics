@@ -3,13 +3,13 @@
 
 Quadruped::Quadruped(void) {};
 
-void Quadruped::_setMode(ROBOT_MODE robotMode) {
-  _robotMode = robotMode;
+void Quadruped::_setMode(RobotMode mode) {
+  _mode = mode;
 }
 
 void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[]) {
 
-  _robotMode = STATIC_STANDING;
+  _mode = STANDING;
 
   for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
     LegID LEG = _enumFromIndex(leg);
@@ -18,18 +18,21 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
   }
 };
 
+void Quadruped::update(int16_t controlCoordinateX, int16_t controlCoordinateY) {
+  walk(controlCoordinateX, controlCoordinateY);
+}
+
+
+
 void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t yawInput) {
 
-  if ((controlCoordinateX == 0) && (controlCoordinateY == 0) && _robotMode != STATIC_STANDING) {
-    _setMode(STAND_PENDING);
-  }
   if (((controlCoordinateX != 0) || (controlCoordinateY != 0)) && (_robotMode == STATIC_STANDING)){
     _setMode(WALKING);
     for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++)
       legStepPlanner[leg].reset();
   }
 
-  if ((_robotMode == WALKING) || (_robotMode == STAND_PENDING)) {
+  if ((_mode == WALKING) || (_robotMode == STAND_PENDING)) {
     for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
       if (legStepPlanner[leg].footAtOrigin()) {
         legStepPlanner[leg].setStepEndpoint(controlCoordinateX, controlCoordinateY, _robotMode, computeYaw(yawInput));
