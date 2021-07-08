@@ -9,7 +9,6 @@
 typedef struct {
   float amplitude;
   float periodHalf;    // It is assumed that the gait arc is symmetrical across the y axis; half the frequency is the amount it goes forward and backwards
-  int16_t timeToUpdate;  // The time between updates
 } Gait;
 
 typedef struct {
@@ -28,9 +27,9 @@ class StepPlanner {
   public:
     StepPlanner();
     void init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t robotHeight);
-    void calculateStep(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration);
-    void calculateDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration);
-    void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY);
+    void calculateStep(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance);
+    void calculateDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance);
+    void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDistance);
     void updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY);
     bool update();
 
@@ -61,7 +60,10 @@ class StepPlanner {
     RobotMode _mode; 
     StepStage _walkingStage;
 
-    Gait _gait;
+    // Gait _gait;
+    int16_t _gaitAmplitude;
+    int16_t _gaitStepLength;
+    int16_t _gaitDrawBackLength;
 
 
 };

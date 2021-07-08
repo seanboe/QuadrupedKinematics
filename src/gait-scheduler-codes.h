@@ -6,6 +6,7 @@
 #define DRAW_BACK 11
 #define PAUSE     12
 
-#define SCHEDULE_START  20
+#define STRIDE_LENGTH_INDEX 0
+#define 
 
 #endif

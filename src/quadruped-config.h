@@ -18,9 +18,7 @@
 
 //****************** walking/gait setup *******************
 
-#define TIME_TO_UPDATE          6    // The time between each update of the state machine + 1 i.e. this will update every 10 millis
-#define GAIT_POSITION_INCREMENT 1     // The amount incremented and decremented to footXYDrop
-#define INTER_STEP_PAUSE        250
+#define GAIT_UPDATE_FREQUENCY   10    // The time between each update of the state machine + 1 i.e. this will update every 10 millis
 
 // Uncomment whichever one you want, comment out the other. 
 #define RIGHT_FOOTED                  

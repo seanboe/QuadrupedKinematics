@@ -19,9 +19,10 @@ void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t ro
   _offsetX = offsetX;
   _offsetY = offsetY;
 
-  _gait.amplitude = 60;
-  _gait.periodHalf = 80;
-  _gait.timeToUpdate = 10;
+  // _gait.amplitude = 60;
+  _gaitAmplitude = 60;
+  // _gait.periodHalf = 80;
+  // _gait.timeToUpdate = 10;
 
   returnToOrigin();
 }
@@ -35,7 +36,7 @@ void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t ro
 */
 bool StepPlanner::update() {
 
-  if ((millis() - _previousUpdateTime) % (long)_gait.timeToUpdate == 0) {
+  if ((millis() - _previousUpdateTime) % GAIT_UPDATE_FREQUENCY == 0) {
 
     dynamicFootPosition.x = footPosX.update() + _offsetX;
     dynamicFootPosition.y = footPosY.update() + _offsetY;
@@ -50,36 +51,37 @@ bool StepPlanner::update() {
 
 
 
-void StepPlanner::calculateStep(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration) {
+void StepPlanner::calculateStep(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance) {
 
   _mode = WALKING;
   _walkingStage = ACTIVE_WALKING_ARC;
 
-  setStepEndpoint(controlCoordinateX, controlCoordinateY);
+  _gaitStepLength = stepDistance;
+
+  setStepEndpoint(controlCoordinateX, controlCoordinateY, stepDistance);
 
   footPosX.go(_stepEndpoint.x, stepDuration, LINEAR, ONCEFORWARD);
   footPosY.go(_stepEndpoint.y, stepDuration, LINEAR, ONCEFORWARD);
-  footDrop.go(_gait.periodHalf / 2, stepDuration, LINEAR, ONCEFORWARD);
+  footDrop.go(stepDistance / 2, stepDuration, LINEAR, ONCEFORWARD);
 }
 
-void StepPlanner::calculateDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration) {
-
-  Serial.println(_legID);
-  Serial.println("Here");
+void StepPlanner::calculateDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance) {
 
   _mode = WALKING;
   _walkingStage = ACTIVE_WALKING_DRAW_BACK;
 
-  setStepEndpoint(controlCoordinateX, controlCoordinateY);
+  _gaitDrawBackLength = stepDistance;
+
+  setStepEndpoint(controlCoordinateX, controlCoordinateY, stepDistance);
 
   footPosX.go(_stepEndpoint.x, stepDuration, LINEAR, ONCEFORWARD);
   footPosY.go(_stepEndpoint.y, stepDuration, LINEAR, ONCEFORWARD);
-  footDrop.go(-1 * (_gait.periodHalf / 2), stepDuration, LINEAR, ONCEFORWARD);
+  footDrop.go(-1 * (stepDistance / 2), stepDuration, LINEAR, ONCEFORWARD);
 }
 
 void StepPlanner::updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY) {
 
-  setStepEndpoint(newControlCoordinateX, newControlCoordinateY);
+  setStepEndpoint(newControlCoordinateX, newControlCoordinateY, _gaitDrawBackLength);
 
   // footPosY would work also
   long timeLeft = (footPosX.getDuration() - ((footPosX.getCompletion() / 100) * footPosX.getDuration()));
@@ -90,23 +92,22 @@ void StepPlanner::updateEndpoint(int16_t newControlCoordinateX, int16_t newContr
 }
 
 
-void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY) {
+void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDistance) {
 
   float stepEndpointX = 0.0;
   float stepEndpointY = 0.0;
   
-  float periodHalf = _gait.periodHalf;
   float movementGradient = 0;
 
   if (controlCoordinateX == 0) {
     stepEndpointX = 0;
-    stepEndpointY = periodHalf/2;
+    stepEndpointY = stepDistance;
   }
   else {
     movementGradient = (float)(controlCoordinateY / controlCoordinateX);
 
-    stepEndpointX = ((periodHalf/2) / sqrt(1 + pow(movementGradient, 2)));
-    stepEndpointY = (((periodHalf/2) * abs(movementGradient)) / sqrt(1 + pow(movementGradient, 2)));
+    stepEndpointX = (stepDistance / sqrt(1 + pow(movementGradient, 2)));
+    stepEndpointY = ((stepDistance * abs(movementGradient)) / sqrt(1 + pow(movementGradient, 2)));
   }
 
   // verify that the direction is correct. The quadrant of movement must 
@@ -136,8 +137,8 @@ void StepPlanner::setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoo
 
   // flip the result (kinematics thinks that x is moving forwards/backwards while looking down the robot)
   // stepPlanner thinks that y is moving forwards/backwards
-  _stepEndpoint.x = stepEndpointY;
-  _stepEndpoint.y = stepEndpointX;
+  _stepEndpoint.x = stepEndpointY + footPosX.update();
+  _stepEndpoint.y = stepEndpointX + footPosY.update();
 
 }
 
@@ -154,16 +155,16 @@ int16_t StepPlanner::getStepHeight(float footXYDropL) {
 
   int16_t stepHeight = 0;
 
-  float periodHalf = _gait.periodHalf;
-  float amplitude = _gait.amplitude;
+  // float periodHalf = _gait.periodHalf;
+  // float amplitude = _gait.amplitude;
 
   if (_mode == STANDING)
     return _robotHeight;
 
   switch (_walkingStage) {
-    case FIRST_STEP_ARC:           stepHeight = _robotHeight - lrint( (amplitude/2) * cos(PI * (footXYDropL - (periodHalf/4))/(periodHalf/2) ) ); break;
+    case FIRST_STEP_ARC:           stepHeight = _robotHeight - lrint( (_gaitAmplitude/2) * cos(PI * (footXYDropL - (_gaitStepLength/4))/(_gaitStepLength/2) ) ); break;
     case FIRST_STEP_DRAW_BACK:     stepHeight = _robotHeight - 0; break;
-    case ACTIVE_WALKING_ARC:       stepHeight = _robotHeight - lrint( amplitude * cos( (PI * (footXYDropL)/periodHalf) ) ); break;
+    case ACTIVE_WALKING_ARC:       stepHeight = _robotHeight - lrint( _gaitAmplitude * cos( (PI * (footXYDropL)/_gaitStepLength) ) ); break;
     case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight - 0; break;
     // case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight + lrint( (amplitude/DRAW_BACK_AMPLITUDE_REDUCTION) * cos(PI * (footXYDropL)/periodHalf ) ); break;
   }
