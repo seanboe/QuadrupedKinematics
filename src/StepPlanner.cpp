@@ -58,11 +58,13 @@ void StepPlanner::calculateStep(int16_t controlCoordinateX, int16_t controlCoord
 
   _gaitStepLength = stepDistance;
 
+  returnToOrigin(true);
+
   setStepEndpoint(controlCoordinateX, controlCoordinateY, stepDistance);
 
   footPosX.go(_stepEndpoint.x, stepDuration, LINEAR, ONCEFORWARD);
   footPosY.go(_stepEndpoint.y, stepDuration, LINEAR, ONCEFORWARD);
-  footDrop.go(stepDistance / 2, stepDuration, LINEAR, ONCEFORWARD);
+  footDrop.go(stepDistance, stepDuration, LINEAR, ONCEFORWARD);
 }
 
 void StepPlanner::calculateDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance) {
@@ -72,11 +74,13 @@ void StepPlanner::calculateDrawBack(int16_t controlCoordinateX, int16_t controlC
 
   _gaitDrawBackLength = stepDistance;
 
+  returnToOrigin(true);
+
   setStepEndpoint(controlCoordinateX, controlCoordinateY, stepDistance);
 
   footPosX.go(_stepEndpoint.x, stepDuration, LINEAR, ONCEFORWARD);
   footPosY.go(_stepEndpoint.y, stepDuration, LINEAR, ONCEFORWARD);
-  footDrop.go(-1 * (stepDistance / 2), stepDuration, LINEAR, ONCEFORWARD);
+  footDrop.go(-1 * (stepDistance), stepDuration, LINEAR, ONCEFORWARD);
 }
 
 void StepPlanner::updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY) {
@@ -162,9 +166,9 @@ int16_t StepPlanner::getStepHeight(float footXYDropL) {
     return _robotHeight;
 
   switch (_walkingStage) {
-    case FIRST_STEP_ARC:           stepHeight = _robotHeight - lrint( (_gaitAmplitude/2) * cos(PI * (footXYDropL - (_gaitStepLength/4))/(_gaitStepLength/2) ) ); break;
+    case FIRST_STEP_ARC:           stepHeight = _robotHeight - lrint( (_gaitAmplitude/2) * sin(PI * (footXYDropL - (_gaitStepLength/4))/(_gaitStepLength/2) ) ); break;
     case FIRST_STEP_DRAW_BACK:     stepHeight = _robotHeight - 0; break;
-    case ACTIVE_WALKING_ARC:       stepHeight = _robotHeight - lrint( _gaitAmplitude * cos( (PI * (footXYDropL)/_gaitStepLength) ) ); break;
+    case ACTIVE_WALKING_ARC:       stepHeight = _robotHeight - lrint( _gaitAmplitude * sin( (PI * (footXYDropL)/_gaitStepLength) ) ); break;
     case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight - 0; break;
     // case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight + lrint( (amplitude/DRAW_BACK_AMPLITUDE_REDUCTION) * cos(PI * (footXYDropL)/periodHalf ) ); break;
   }
@@ -173,10 +177,13 @@ int16_t StepPlanner::getStepHeight(float footXYDropL) {
 
 };
 
-void StepPlanner::returnToOrigin() {
+void StepPlanner::returnToOrigin(bool footDropOnly) {
+  if (footDropOnly) {
+    footDrop.go(0);
+    return;
+  }
   footPosX.go(0);
   footPosY.go(0);
-  footDrop.go(0);
 }
 
 
