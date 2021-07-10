@@ -5,12 +5,6 @@
 #include "quadruped-config.h"
 #include <Ramp.h>
 
-
-typedef struct {
-  float amplitude;
-  float periodHalf;    // It is assumed that the gait arc is symmetrical across the y axis; half the frequency is the amount it goes forward and backwards
-} Gait;
-
 typedef struct {
   float x;
   float y;

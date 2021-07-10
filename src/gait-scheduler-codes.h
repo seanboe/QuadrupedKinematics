@@ -10,7 +10,8 @@
 #define GAIT_AMPLITUDE_INDEX        1
 #define GAIT_DRAW_BACK_FACTOR_INDEX 2
 #define STEP_DURATION_INDEX         3
-#define STEP_CYCLES_INDEX           4
-#define SCHEDULE_START_INDEX        5
+#define STEP_COUNT_INDEX            4
+#define PAUSE_DURATION_INDEX        5
+#define SCHEDULE_START_INDEX        6
 
 #endif

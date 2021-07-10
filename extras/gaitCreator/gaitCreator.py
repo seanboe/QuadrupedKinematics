@@ -4,7 +4,8 @@ step_user_input = "s"
 draw_back_user_input = "db"
 pause_user_input = "p"
 
-gait_array = []
+gait_parameters = []
+gait_schedule = []
 
 def get_code_index(lines, line):
   return lines[line].find("1")
@@ -49,20 +50,23 @@ def print_user_codes():
   
 #   return (steps_until_first - schedule_index) * strideDuration
 
+def formatArray(array):
+  array = str(array)
+  array = array.replace("[", "{")
+  array = array.replace("]", "}")
+  return array
 
 def main():
   
   # Establishing the front matter (the basic parameters of the gait)
-  gait_array.append(int(input("Enter the stride length ")))
-  gait_array.append(int(input("Enter the gait amplitude ")))
-  gait_array.append(int(input("Enter the multiplication factor of the amplitude during the draw back phase\n")))
-  step_duration = int(input("Enter the duration of one step (millis) "))
-  gait_array.append(step_duration)
+  gait_parameters.append(int(input("Enter the stride length ")))
+  gait_parameters.append(int(input("Enter the gait amplitude ")))
+  gait_parameters.append(int(input("Enter the multiplication factor of the amplitude during the draw back phase\n")))
+  step_duration = int(input("Enter the duration of one step in milliseconds "))
+  gait_parameters.append(step_duration)
   gait_step_count = int(input("Will your gait have a two step cycle or a four step cycle? (2/4) "))
-  gait_array.append(gait_step_count)
-  gait_array.append(int(input("Enter the duration of a step pause (if you don't want one, this value doesn't matter). ")))
-  schedule_start_index = len(gait_array) + 1
-  gait_array.append(schedule_start_index);
+  gait_parameters.append(gait_step_count)
+  gait_parameters.append(int(input("Enter the duration of a step pause in milliseconds (if you don't want one, enter '0'). ")))
 
   print("Time to create the schedule! The wizard will allow you to select an action (step = 's', draw back = 'db', pause = 'p') for each of the 4 legs for every step.")
   print("If you forget a code, enter 'help' on any stage of the wizard.\n")
@@ -89,7 +93,7 @@ def main():
         print(f"Error: {leg_action_input} is not a valid character.")
         exit()
 
-    gait_array.append(step)
+    gait_schedule.append(step)
   
   # Calculate the time until the first step for each leg 
   # first_step_timings = []
@@ -97,10 +101,9 @@ def main():
   #   first_step_timings.append(time_until_first_step(step_duration, schedule_start_index, leg, step_number))
   # gait_array.insert(schedule_start_index, first_step_timings)
 
-  gait_array_output = str(gait_array)
-  gait_array_output = gait_array_output.replace("[", "{")
-  gait_array_output = gait_array_output.replace("]", "}")
-  print(gait_array_output)
+  print(formatArray(gait_parameters))
+  print(formatArray(gait_schedule))
+  print()
 
 if __name__ == "__main__":
   main()

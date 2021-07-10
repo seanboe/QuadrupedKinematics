@@ -18,13 +18,79 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
   }
 };
 
-// void Quadruped::update(int16_t controlCoordinateX, int16_t controlCoordinateY) {
-//   legStepPlanner[0].calculateStep(controlCoordinateX, controlCoordinateY);
-// }
+void Quadruped::loadGait(int16_t gaitParameters[], int16_t gaitSchedule[][ROBOT_LEG_COUNT]) {
 
+  _gait.stepDistance = gaitParameters[STRIDE_LENGTH_INDEX];
+  _gait.amplitude = gaitParameters[GAIT_AMPLITUDE_INDEX];
+  _gait.drawBackReduction = gaitParameters[GAIT_DRAW_BACK_FACTOR_INDEX];
+  _gait.stepDuration = gaitParameters[STEP_DURATION_INDEX];
+  _gait.stepCount = gaitParameters[STEP_COUNT_INDEX];
+  _gait.pauseDuration = gaitParameters[PAUSE_DURATION_INDEX];
 
+  for (int16_t x = 0; x < _gait.stepCount; x++ ) {
+    for (int16_t i = 0; i < ROBOT_LEG_COUNT; i++)
+      _gaitSchedule[x][i] = gaitSchedule[x][i];
+  }
+}
 
 void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
+
+  if (_mode == STANDING) {
+    _mode = WALKING;
+    _firstStep = true;
+    _previousStepUpdate = millis();
+    _justUpdatedWalk = false;
+    _currentGaitScheduleIndex = 0;
+  }
+
+  if (_mode == WALKING) {
+    if (((millis() - _previousStepUpdate) % _gait.stepDuration == 0) && _justUpdatedWalk == false) {
+
+      Serial.println("hereeee");
+
+      int16_t stepDistance = 0;
+      int16_t drawBackDistance = 0;
+
+      // Weird stuff here; fix later. 
+      if (_firstStep) {
+        if (_gait.stepCount == 2) {
+          stepDistance = _gait.stepDistance / 2;
+          drawBackDistance = _gait.stepDistance / 2;
+        }
+        else if (_gait.stepCount == 4) {
+          if (_currentGaitScheduleIndex == _gait.stepCount - 1)  stepDistance = _gait.stepDistance;
+          else stepDistance = (2*(_currentGaitScheduleIndex - 1) + 1) * _gait.stepDistance / 6;
+          drawBackDistance = _gait.stepDistance / 6;
+        }
+      }
+      else  
+        stepDistance = _gait.stepDistance;
+
+      for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+        switch (_gaitSchedule[_currentGaitScheduleIndex][leg]) {
+          case TAKE_STEP:
+            legStepPlanner[leg].calculateStep(controlCoordinateX, controlCoordinateY, _gait.stepDuration, stepDistance);
+            break;
+          case DRAW_BACK:
+            legStepPlanner[leg].calculateDrawBack(controlCoordinateX, controlCoordinateY, _gait.stepDuration, drawBackDistance);
+            break;
+          case PAUSE: break;
+        }
+      }
+
+      _currentGaitScheduleIndex++;
+      if (_currentGaitScheduleIndex == _gait.stepCount)
+        _currentGaitScheduleIndex = 0;
+        _firstStep = false;
+      
+      _justUpdatedWalk = true;
+    }
+
+    if (((millis() - _previousStepUpdate) % _gait.stepDuration == 0) && _justUpdatedWalk == true) _justUpdatedWalk = false;
+
+  }
+
+
 
   if (legStepPlanner[0].update()) {
     int16_t inputX = legStepPlanner[0].dynamicFootPosition.x;
@@ -32,7 +98,14 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
     int16_t inputZ = legStepPlanner[0].dynamicFootPosition.z;
 
     legKinematics[0].setFootEndpoint(inputX, inputY, inputZ);
+
   }
+
+};
+
+// void Quadruped::updateLegs() {
+
+// }
 
 
   // if (((controlCoordinateX != 0) || (controlCoordinateY != 0)) && (_robotMode == STATIC_STANDING)){
@@ -68,24 +141,22 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
 
 
 
-};
 
 
 
+// int16_t Quadruped::computeYaw(int16_t yawAngle) {
+//   // Map the controller input to a yaw angle. It is assumed that 0 degrees is when the body of the robot is straight
+//   // forwards, with degrees increasing as you approach the rear of the robot. 
+//   if (abs(yawAngle) > YAW_MAXIMUM_ANGLE) {
+//     if (yawAngle > 0) yawAngle = YAW_MAXIMUM_ANGLE;
+//     if (yawAngle < 0) yawAngle = -1 * YAW_MAXIMUM_ANGLE;
+//   }
 
-int16_t Quadruped::computeYaw(int16_t yawAngle) {
-  // Map the controller input to a yaw angle. It is assumed that 0 degrees is when the body of the robot is straight
-  // forwards, with degrees increasing as you approach the rear of the robot. 
-  if (abs(yawAngle) > YAW_MAXIMUM_ANGLE) {
-    if (yawAngle > 0) yawAngle = YAW_MAXIMUM_ANGLE;
-    if (yawAngle < 0) yawAngle = -1 * YAW_MAXIMUM_ANGLE;
-  }
+//   // Serial.println(lrint((BODY_LENGTH / 2) * atan((yawAngle * PI)/180)));
 
-  // Serial.println(lrint((BODY_LENGTH / 2) * atan((yawAngle * PI)/180)));
+//   return lrint((BODY_LENGTH / 2) * atan((yawAngle * PI)/180));
 
-  return lrint((BODY_LENGTH / 2) * atan((yawAngle * PI)/180));
-
-};
+// };
 
 
 LegID Quadruped::_enumFromIndex(int8_t index) {
