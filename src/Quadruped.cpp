@@ -31,6 +31,9 @@ void Quadruped::loadGait(int16_t gaitParameters[], int16_t gaitSchedule[][ROBOT_
     for (int16_t i = 0; i < ROBOT_LEG_COUNT; i++)
       _gaitSchedule[x][i] = gaitSchedule[x][i];
   }
+  for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+    legStepPlanner[leg].setGaitParameters(_gait.amplitude, _gait.drawBackReduction);
+  }
 }
 
 void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
@@ -44,46 +47,39 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
   }
 
   if (_mode == WALKING) {
-    if (((millis() - _previousStepUpdate) % _gait.stepDuration == 0) && _justUpdatedWalk == false) {
-
-      Serial.println("hereeee");
+    if (((int16_t)(millis() - _previousStepUpdate) == (_gait.stepDuration + _gait.pauseDuration)) && _justUpdatedWalk == false) {
 
       int16_t stepDistance = 0;
       int16_t drawBackDistance = 0;
 
       // Weird stuff here; fix later. 
-      if (_firstStep) {
-        Serial.println("first step");
+      if (_firstStep && _currentGaitScheduleIndex != _gait.stepCount - 1) {
         if (_gait.stepCount == 2) {
           stepDistance = _gait.stepDistance / 2;
           drawBackDistance = _gait.stepDistance / 2;
         }
         else if (_gait.stepCount == 4) {
-          if (_currentGaitScheduleIndex == _gait.stepCount - 1)  {
-            drawBackDistance = _gait.stepDistance / 3;
-            stepDistance = _gait.stepDistance;
-            Serial.println("herelksdfjlsdkfjlksdjf");
-          }
-          else {
-            stepDistance = (2*(_currentGaitScheduleIndex) + 1) * _gait.stepDistance / 6;
-            drawBackDistance = _gait.stepDistance / 6;
-          }
+          stepDistance = (2*(_currentGaitScheduleIndex) + 1) * _gait.stepDistance / 6;
+          drawBackDistance = _gait.stepDistance / 6;
         }
       }
       else {
-        drawBackDistance = _gait.stepDistance / 3;
+        if (_gait.stepCount == 2) {
+          drawBackDistance = _gait.stepDistance;
+        }
+        else if (_gait.stepCount == 4) {
+          drawBackDistance = _gait.stepDistance / 3;  
+        }
         stepDistance = _gait.stepDistance;
       }
 
       for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
         switch (_gaitSchedule[_currentGaitScheduleIndex][leg]) {
           case TAKE_STEP:
-            legStepPlanner[leg].calculateStep(controlCoordinateX, controlCoordinateY, _gait.stepDuration, stepDistance);
+            legStepPlanner[leg].calculateStep(controlCoordinateX, controlCoordinateY, _gait.stepDuration - 10, stepDistance);
             break;
           case DRAW_BACK:
-                                  if (legStepPlanner[leg].finishedAction()) Serial.println("We're done");
-
-            legStepPlanner[leg].calculateDrawBack(controlCoordinateX, controlCoordinateY, _gait.stepDuration, drawBackDistance);
+            legStepPlanner[leg].calculateDrawBack(controlCoordinateX, controlCoordinateY, _gait.stepDuration - 10, drawBackDistance);
             break;
           case PAUSE: break;
         }
@@ -96,6 +92,7 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
       }
       
       _justUpdatedWalk = true;
+      _previousStepUpdate = millis();
     }
 
     if ((millis() - _previousStepUpdate) % _gait.stepDuration != 0) _justUpdatedWalk = false;
@@ -116,7 +113,7 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
 };
 
 void Quadruped::updateLegPositions() {
-  for (int16_t leg = 0; leg < 3; leg++) {
+  for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
     if (legStepPlanner[leg].update()) {
       int16_t inputX = legStepPlanner[leg].dynamicFootPosition.x;
       int16_t inputY = legStepPlanner[leg].dynamicFootPosition.y;

@@ -21,6 +21,7 @@ class StepPlanner {
   public:
     StepPlanner();
     void init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t robotHeight);
+    void setGaitParameters(int16_t amplitude, int16_t drawBackReduction);
     void calculateStep(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance);
     void calculateDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance);
     void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDistance);
@@ -42,9 +43,10 @@ class StepPlanner {
     int16_t _offsetX;
     int16_t _offsetY;
 
-    rampFloat footPosX;
+    // rampFloat footPosX;
     rampFloat footPosY;
     rampFloat footDrop;
+    rampFloat footPosX;
 
     bool _wasAtOrigin;    
 
@@ -59,6 +61,7 @@ class StepPlanner {
     int16_t _gaitAmplitude;
     int16_t _gaitStepLength;
     int16_t _gaitDrawBackLength;
+    int16_t _gaitDrawBackReduction;
 
 
 };

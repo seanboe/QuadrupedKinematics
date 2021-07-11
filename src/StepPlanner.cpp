@@ -20,13 +20,16 @@ void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t ro
   _offsetY = offsetY;
 
   // _gait.amplitude = 60;
-  _gaitAmplitude = 60;
   // _gait.periodHalf = 80;
   // _gait.timeToUpdate = 10;
 
   returnToOrigin();
 }
 
+void StepPlanner::setGaitParameters(int16_t amplitude, int16_t drawBackReduction) {
+  _gaitAmplitude = amplitude;
+  _gaitDrawBackReduction = drawBackReduction;
+};
 
 /*!
  *    @brief Updates the position of the foot as the step progresses.
@@ -169,8 +172,8 @@ int16_t StepPlanner::getStepHeight(float footXYDropL) {
     case FIRST_STEP_ARC:           stepHeight = _robotHeight - lrint( (_gaitAmplitude/2) * sin(PI * (footXYDropL - (_gaitStepLength/4))/(_gaitStepLength/2) ) ); break;
     case FIRST_STEP_DRAW_BACK:     stepHeight = _robotHeight - 0; break;
     case ACTIVE_WALKING_ARC:       stepHeight = _robotHeight - lrint( _gaitAmplitude * sin( (PI * (footXYDropL)/_gaitStepLength) ) ); break;
-    case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight - 0; break;
-    // case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight + lrint( (amplitude/DRAW_BACK_AMPLITUDE_REDUCTION) * cos(PI * (footXYDropL)/periodHalf ) ); break;
+    // case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight - 0; break;
+    case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight - lrint( (_gaitAmplitude/_gaitDrawBackReduction) * sin(PI * (footXYDropL)/_gaitDrawBackLength ) ); break;
   }
 
   return (int16_t)lrint(stepHeight);

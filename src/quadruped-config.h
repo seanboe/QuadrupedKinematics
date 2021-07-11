@@ -18,7 +18,7 @@
 
 //****************** walking/gait setup *******************
 
-#define GAIT_UPDATE_FREQUENCY   10    // The time between each update of the state machine + 1 i.e. this will update every 10 millis
+#define GAIT_UPDATE_FREQUENCY   2    // The time between each update of the leg positions. Decreasing this increases the likelihood of an unfinished step or draw back. 
 // #define STANDING_TROT
 
 #define MAX_STEPS   4
