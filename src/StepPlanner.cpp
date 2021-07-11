@@ -186,7 +186,12 @@ void StepPlanner::returnToOrigin(bool footDropOnly) {
   footPosY.go(0);
 }
 
-
+bool StepPlanner::finishedAction() {
+  if (footPosX.isFinished() && footPosY.isFinished() && footDrop.isFinished())
+    return true;
+  else
+    return false;
+}
 
 
 

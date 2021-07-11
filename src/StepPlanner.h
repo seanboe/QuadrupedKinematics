@@ -29,6 +29,7 @@ class StepPlanner {
 
     int16_t getStepHeight(float footXYDropL);
     void returnToOrigin(bool footDropOnly = false);
+    bool finishedAction();
     // bool footAtOrigin();
     // void reset();
 

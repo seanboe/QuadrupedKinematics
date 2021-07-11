@@ -81,6 +81,8 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
             legStepPlanner[leg].calculateStep(controlCoordinateX, controlCoordinateY, _gait.stepDuration, stepDistance);
             break;
           case DRAW_BACK:
+                                  if (legStepPlanner[leg].finishedAction()) Serial.println("We're done");
+
             legStepPlanner[leg].calculateDrawBack(controlCoordinateX, controlCoordinateY, _gait.stepDuration, drawBackDistance);
             break;
           case PAUSE: break;
@@ -114,7 +116,7 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
 };
 
 void Quadruped::updateLegPositions() {
-  for (int16_t leg = 0; leg < 4; leg++) {
+  for (int16_t leg = 0; leg < 3; leg++) {
     if (legStepPlanner[leg].update()) {
       int16_t inputX = legStepPlanner[leg].dynamicFootPosition.x;
       int16_t inputY = legStepPlanner[leg].dynamicFootPosition.y;
