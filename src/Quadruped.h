@@ -25,7 +25,7 @@ class Quadruped {
     void loadGait(int16_t gaitParameters[], int16_t gaitSchedule[][ROBOT_LEG_COUNT]);
 
     void walk(int16_t controlCoordinateX, int16_t controlCoordinateY);
-    void updateLegs();
+    void updateLegPositions();
 
 
     int16_t computeYaw(int16_t yawAngle);
@@ -42,7 +42,7 @@ class Quadruped {
     RobotMode _mode;
 
     Gait _gait;
-    int16_t _gaitSchedule[][ROBOT_LEG_COUNT];
+    int16_t _gaitSchedule[MAX_STEPS][ROBOT_LEG_COUNT];
     int16_t _currentGaitScheduleIndex;
 
     unsigned long _previousStepUpdate;

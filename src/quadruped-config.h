@@ -19,12 +19,9 @@
 //****************** walking/gait setup *******************
 
 #define GAIT_UPDATE_FREQUENCY   10    // The time between each update of the state machine + 1 i.e. this will update every 10 millis
-
-// Uncomment whichever one you want, comment out the other. 
-#define RIGHT_FOOTED                  
-// #define LEFT_FOOTED
-
 // #define STANDING_TROT
+
+#define MAX_STEPS   4
 
 #define DRAW_BACK_AMPLITUDE_REDUCTION 4 // the draw back phase of the step also has an amplitude proportional to the arc amplitude. 
 

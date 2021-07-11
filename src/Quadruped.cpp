@@ -53,18 +53,27 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
 
       // Weird stuff here; fix later. 
       if (_firstStep) {
+        Serial.println("first step");
         if (_gait.stepCount == 2) {
           stepDistance = _gait.stepDistance / 2;
           drawBackDistance = _gait.stepDistance / 2;
         }
         else if (_gait.stepCount == 4) {
-          if (_currentGaitScheduleIndex == _gait.stepCount - 1)  stepDistance = _gait.stepDistance;
-          else stepDistance = (2*(_currentGaitScheduleIndex - 1) + 1) * _gait.stepDistance / 6;
-          drawBackDistance = _gait.stepDistance / 6;
+          if (_currentGaitScheduleIndex == _gait.stepCount - 1)  {
+            drawBackDistance = _gait.stepDistance / 3;
+            stepDistance = _gait.stepDistance;
+            Serial.println("herelksdfjlsdkfjlksdjf");
+          }
+          else {
+            stepDistance = (2*(_currentGaitScheduleIndex) + 1) * _gait.stepDistance / 6;
+            drawBackDistance = _gait.stepDistance / 6;
+          }
         }
       }
-      else  
+      else {
+        drawBackDistance = _gait.stepDistance / 3;
         stepDistance = _gait.stepDistance;
+      }
 
       for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
         switch (_gaitSchedule[_currentGaitScheduleIndex][leg]) {
@@ -79,33 +88,43 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
       }
 
       _currentGaitScheduleIndex++;
-      if (_currentGaitScheduleIndex == _gait.stepCount)
+      if (_currentGaitScheduleIndex == _gait.stepCount) {
         _currentGaitScheduleIndex = 0;
         _firstStep = false;
+      }
       
       _justUpdatedWalk = true;
     }
 
-    if (((millis() - _previousStepUpdate) % _gait.stepDuration == 0) && _justUpdatedWalk == true) _justUpdatedWalk = false;
+    if ((millis() - _previousStepUpdate) % _gait.stepDuration != 0) _justUpdatedWalk = false;
 
   }
 
+  updateLegPositions();
 
+  // if (legStepPlanner[0].update()) {
+  //   int16_t inputX = legStepPlanner[0].dynamicFootPosition.x;
+  //   int16_t inputY = legStepPlanner[0].dynamicFootPosition.y;
+  //   int16_t inputZ = legStepPlanner[0].dynamicFootPosition.z;
 
-  if (legStepPlanner[0].update()) {
-    int16_t inputX = legStepPlanner[0].dynamicFootPosition.x;
-    int16_t inputY = legStepPlanner[0].dynamicFootPosition.y;
-    int16_t inputZ = legStepPlanner[0].dynamicFootPosition.z;
+  //   legKinematics[0].setFootEndpoint(inputX, inputY, inputZ);
 
-    legKinematics[0].setFootEndpoint(inputX, inputY, inputZ);
-
-  }
+  // }
 
 };
 
-// void Quadruped::updateLegs() {
+void Quadruped::updateLegPositions() {
+  for (int16_t leg = 0; leg < 4; leg++) {
+    if (legStepPlanner[leg].update()) {
+      int16_t inputX = legStepPlanner[leg].dynamicFootPosition.x;
+      int16_t inputY = legStepPlanner[leg].dynamicFootPosition.y;
+      int16_t inputZ = legStepPlanner[leg].dynamicFootPosition.z;
 
-// }
+      legKinematics[leg].setFootEndpoint(inputX, inputY, inputZ);
+
+    }
+  }
+}
 
 
   // if (((controlCoordinateX != 0) || (controlCoordinateY != 0)) && (_robotMode == STATIC_STANDING)){
