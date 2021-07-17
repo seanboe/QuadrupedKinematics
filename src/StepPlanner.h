@@ -22,8 +22,8 @@ class StepPlanner {
     StepPlanner();
     void init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t robotHeight);
     void setGaitParameters(int16_t amplitude, int16_t drawBackReduction);
-    void calculateStep(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance);
-    void calculateDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance);
+    void requestStep(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance);
+    void requestDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance);
     void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDistance);
     void updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY);
     bool update();
@@ -46,7 +46,7 @@ class StepPlanner {
     rampFloat footPosX;
     rampFloat footPosY;
     rampFloat footDrop;
-    
+
     bool _wasAtOrigin;    
 
     long _previousUpdateTime;

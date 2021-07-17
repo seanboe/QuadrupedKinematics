@@ -90,10 +90,10 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
       for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
         switch (_gaitSchedule[_currentGaitScheduleIndex][leg]) {
           case TAKE_STEP:
-            legStepPlanner[leg].calculateStep(controlCoordinateX, controlCoordinateY, _gait.stepDuration, stepDistance);
+            legStepPlanner[leg].requestStep(controlCoordinateX, controlCoordinateY, _gait.stepDuration, stepDistance);
             break;
           case DRAW_BACK:
-            legStepPlanner[leg].calculateDrawBack(controlCoordinateX, controlCoordinateY, _gait.stepDuration, drawBackDistance);
+            legStepPlanner[leg].requestDrawBack(controlCoordinateX, controlCoordinateY, _gait.stepDuration, drawBackDistance);
             break;
           case PAUSE: break;
         }
