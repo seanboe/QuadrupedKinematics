@@ -19,6 +19,15 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
     legStepPlanner[leg].init(LEG, inputX, inputY, inputZ);
     legKinematics[leg].init(LEG, inputX, inputY, inputZ, legMotors);
   }
+
+  // Reset this
+  _IMUData.x = 0;
+  _IMUData.y = 0;
+  _IMUData.z = 0;
+  _filteredIMUData.x = 0;
+  _filteredIMUData.y = 0;
+  _filteredIMUData.z = 0;
+  _haveIMUFeedback = false;
 };
 
 /*!
@@ -115,15 +124,6 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
 
   updateLegPositions();
 
-  // if (legStepPlanner[0].update()) {
-  //   int16_t inputX = legStepPlanner[0].dynamicFootPosition.x;
-  //   int16_t inputY = legStepPlanner[0].dynamicFootPosition.y;
-  //   int16_t inputZ = legStepPlanner[0].dynamicFootPosition.z;
-
-  //   legKinematics[0].setFootEndpoint(inputX, inputY, inputZ);
-
-  // }
-
 };
 
 /*!
@@ -142,6 +142,42 @@ void Quadruped::updateLegPositions() {
   }
 }
 
+
+void Quadruped::giveIMUFeedback(float accelX, float accelY, float accelZ) {
+  _IMUData.x = accelX;
+  _IMUData.y = accelY;
+  _IMUData.z = accelZ;
+  _haveIMUFeedback = true;
+}
+
+/*!
+ *    @brief Calculates the roll and pitch angles (YXZ rotation sequence) of the robot based on data provided to giveIMUFeedback(). 
+      Refer to this paper from nxp: https://www.nxp.com/files-static/sensors/doc/app_note/AN3461.pdf 
+ *    @param roll A pointer to roll angle variable
+ *    @param pitch A pointer to pitch angle variable
+*/
+void Quadruped::getRollPitch(float *roll, float *pitch) {
+  if (!_haveIMUFeedback) return;
+  
+  float _roll, _pitch;
+
+  _filteredIMUData.x = _IMUData.x * LPF_SMOOTHING_FACTOR + (_filteredIMUData.x * (1.0 - LPF_SMOOTHING_FACTOR));
+  _filteredIMUData.y = _IMUData.y * LPF_SMOOTHING_FACTOR + (_filteredIMUData.y * (1.0 - LPF_SMOOTHING_FACTOR));
+  _filteredIMUData.z = _IMUData.z * LPF_SMOOTHING_FACTOR + (_filteredIMUData.z * (1.0 - LPF_SMOOTHING_FACTOR));
+
+  _roll = (atan2(-_filteredIMUData.y, _filteredIMUData.z) * 180)/PI;
+
+#ifdef IMU_FLIPPED
+  if (_roll < 0) _roll += 180;
+  else if (_roll > 0) _roll -= 180;
+#endif
+
+  _pitch = (atan2(_filteredIMUData.x, sqrt(pow(_filteredIMUData.y,2) + pow(_filteredIMUData.z, 2)))*180)/PI;
+
+  *roll = _roll;
+  *pitch = _pitch;
+}
+
 /*!
  *    @brief Returns a LegID enum depending on the index of the leg
  *    @returns LegID enum
@@ -153,3 +189,4 @@ LegID Quadruped::_enumFromIndex(int8_t index) {
   else if (index == 3) return LEG_4;
   else return LEG_1;
 };
+

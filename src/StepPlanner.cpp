@@ -224,3 +224,11 @@ bool StepPlanner::finishedAction() {
   else
     return false;
 }
+
+/*!
+ *    @brief Allows you to set a new height for the robot
+ *    @param newHeight  The new height of the robot
+*/
+void StepPlanner::setNewHeight(int16_t newHeight) {
+  _robotHeight = newHeight;
+}

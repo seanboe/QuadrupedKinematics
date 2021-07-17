@@ -5,6 +5,7 @@
 #include "StepPlanner.h"
 #include "Kinematics.h"
 #include "quadruped-config.h"
+#include "common.h"
 #include "gait-scheduler-codes.h"
 
 
@@ -27,6 +28,8 @@ class Quadruped {
     void walk(int16_t controlCoordinateX, int16_t controlCoordinateY);
     void updateLegPositions();
 
+    void giveIMUFeedback(float accelX, float accelY, float accelZ);
+    void getRollPitch(float *roll, float *pitch);
 
     int16_t computeYaw(int16_t yawAngle);
 
@@ -41,6 +44,14 @@ class Quadruped {
 
     RobotMode _mode;
 
+    // Balanced Standing
+    Coordinate _IMUData;
+    Coordinate _filteredIMUData;
+    bool _haveIMUFeedback;
+
+
+
+    // Walking
     Gait _gait;
     int16_t _gaitSchedule[MAX_STEPS][ROBOT_LEG_COUNT];
     int16_t _currentGaitScheduleIndex;

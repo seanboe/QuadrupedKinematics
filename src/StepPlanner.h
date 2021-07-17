@@ -3,13 +3,14 @@
 
 #include <Arduino.h>
 #include "quadruped-config.h"
+#include "common.h"
 #include <Ramp.h>
 
-typedef struct {
-  float x;
-  float y;
-  float z;
-} Coordinate;
+// typedef struct {
+//   float x;
+//   float y;
+//   float z;
+// } Coordinate;
 
 typedef enum {
   FIRST_STEP_ARC, FIRST_STEP_DRAW_BACK,
@@ -28,11 +29,11 @@ class StepPlanner {
     void updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY);
     bool update();
 
+    void setNewHeight(int16_t newHeight);
+
     int16_t getStepHeight(float footXYDropL);
     void returnToOrigin(bool footDropOnly = false);
     bool finishedAction();
-    // bool footAtOrigin();
-    // void reset();
 
     Coordinate dynamicFootPosition;
 

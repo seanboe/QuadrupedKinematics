@@ -9,7 +9,7 @@
 #include <Arduino.h>
 
 #include "quadruped-config.h"
-
+#include "common.h"
 #include <Ramp.h>
 
 typedef struct {
