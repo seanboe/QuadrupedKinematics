@@ -43,11 +43,10 @@ class StepPlanner {
     int16_t _offsetX;
     int16_t _offsetY;
 
-    // rampFloat footPosX;
+    rampFloat footPosX;
     rampFloat footPosY;
     rampFloat footDrop;
-    rampFloat footPosX;
-
+    
     bool _wasAtOrigin;    
 
     long _previousUpdateTime;

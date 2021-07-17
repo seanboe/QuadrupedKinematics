@@ -7,9 +7,6 @@ pause_user_input = "p"
 gait_parameters = []
 gait_schedule = []
 
-def get_code_index(lines, line):
-  return lines[line].find("1")
-
 def get_gait_code(leg_action):
   gait_scheduler_codes = open('lib/QuadrupedKinematics/src/gait-scheduler-codes.h', 'r')
   lines = gait_scheduler_codes.readlines()
@@ -26,6 +23,7 @@ def get_gait_code(leg_action):
   step_code = int(lines[content_line + 1][lines[content_line + 1].find("1"): ].strip("\n"))
   draw_back_code = int(lines[content_line + 2][lines[content_line + 2].find("1"): ].strip("\n"))
   pause_code = int(lines[content_line + 3][lines[content_line + 3].find("1"): ].strip("\n"))
+  minimum_pause = int(lines[content_line + 4][lines[content_line + 4].find("1"): ].strip("\n")) - 10
 
   if leg_action == step_user_input:
     return step_code
@@ -33,22 +31,20 @@ def get_gait_code(leg_action):
     return draw_back_code
   elif leg_action == pause_user_input:
     return pause_code
+  elif leg_action == "minimum_pause":
+    return minimum_pause
+  
 
 
 def print_user_codes():
   print(f"Select an action (step = '{step_user_input}', draw back = '{draw_back_user_input}', pause = '{pause_user_input}') for each of the 4 legs for every step.")
 
-# def time_until_first_step(strideDuration, schedule_index, leg_index, step_count):
-#   steps_until_first = schedule_index
-#   for leg in range(0, step_count):
-#     leg_action = gait_array[steps_until_first][leg_index]
-#     print(leg_action)
-#     if leg_action == get_gait_code(step_user_input):
-#       break
-#     else: 
-#       steps_until_first += 1
-  
-#   return (steps_until_first - schedule_index) * strideDuration
+def make_multiple_of(number, multiple):
+  if (number % multiple > (multiple / 2)):
+    return (number // multiple) * multiple + multiple
+  else:
+    return (number // multiple) * multiple
+
 
 def formatArray(array):
   array = str(array)
@@ -59,14 +55,20 @@ def formatArray(array):
 def main():
   
   # Establishing the front matter (the basic parameters of the gait)
-  gait_parameters.append(int(input("Enter the stride length ")))
-  gait_parameters.append(int(input("Enter the gait amplitude ")))
-  gait_parameters.append(int(input("Enter the multiplication factor of the amplitude during the draw back phase\n")))
+  stride_length = int(input("Enter the stride length "))
+  step_amplitude = int(input("Enter the gait amplitude "))
+  draw_back_reduction = int(input("Enter the multiplication factor of the amplitude during the draw back phase\n"))
   step_duration = int(input("Enter the duration of one step in milliseconds "))
-  gait_parameters.append(step_duration)
   gait_step_count = int(input("Will your gait have a two step cycle or a four step cycle? (2/4) "))
+  gait_duration = int(input("Enter the duration of a step pause in milliseconds (if you don't want one, enter '0'). ")) + get_gait_code("minimum_pause")
+
+  if (gait_step_count == 4):
+    gait_parameters.append(make_multiple_of(stride_length, 3))
+  gait_parameters.append(step_amplitude)
+  gait_parameters.append(draw_back_reduction)
+  gait_parameters.append(step_duration)
   gait_parameters.append(gait_step_count)
-  gait_parameters.append(int(input("Enter the duration of a step pause in milliseconds (if you don't want one, enter '0'). ")))
+  gait_parameters.append(gait_duration)
 
   print("Time to create the schedule! The wizard will allow you to select an action (step = 's', draw back = 'db', pause = 'p') for each of the 4 legs for every step.")
   print("If you forget a code, enter 'help' on any stage of the wizard.\n")
@@ -94,15 +96,9 @@ def main():
         exit()
 
     gait_schedule.append(step)
-  
-  # Calculate the time until the first step for each leg 
-  # first_step_timings = []
-  # for leg in range(0, 4):
-  #   first_step_timings.append(time_until_first_step(step_duration, schedule_start_index, leg, step_number))
-  # gait_array.insert(schedule_start_index, first_step_timings)
 
-  print(formatArray(gait_parameters))
-  print(formatArray(gait_schedule))
+  print("Gait Parameters:", formatArray(gait_parameters))
+  print("Gait Schedule:", formatArray(gait_schedule))
   print()
 
 if __name__ == "__main__":

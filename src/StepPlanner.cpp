@@ -19,10 +19,6 @@ void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t ro
   _offsetX = offsetX;
   _offsetY = offsetY;
 
-  // _gait.amplitude = 60;
-  // _gait.periodHalf = 80;
-  // _gait.timeToUpdate = 10;
-
   returnToOrigin();
 }
 
@@ -44,7 +40,6 @@ bool StepPlanner::update() {
     dynamicFootPosition.x = footPosX.update() + _offsetX;
     dynamicFootPosition.y = footPosY.update() + _offsetY;
     dynamicFootPosition.z = getStepHeight(footDrop.update());
-    // dynamicFootPosition.z = 135;
 
     _previousUpdateTime = (millis() - 1);
     return true;
@@ -172,8 +167,10 @@ int16_t StepPlanner::getStepHeight(float footXYDropL) {
     case FIRST_STEP_ARC:           stepHeight = _robotHeight - lrint( (_gaitAmplitude/2) * sin(PI * (footXYDropL - (_gaitStepLength/4))/(_gaitStepLength/2) ) ); break;
     case FIRST_STEP_DRAW_BACK:     stepHeight = _robotHeight - 0; break;
     case ACTIVE_WALKING_ARC:       stepHeight = _robotHeight - lrint( _gaitAmplitude * sin( (PI * (footXYDropL)/_gaitStepLength) ) ); break;
-    // case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight - 0; break;
-    case ACTIVE_WALKING_DRAW_BACK: stepHeight = _robotHeight - lrint( (_gaitAmplitude/_gaitDrawBackReduction) * sin(PI * (footXYDropL)/_gaitDrawBackLength ) ); break;
+    case ACTIVE_WALKING_DRAW_BACK: 
+      if (_gaitDrawBackReduction == 0)  stepHeight = _robotHeight - 0;
+      else stepHeight = _robotHeight - lrint( (_gaitAmplitude/_gaitDrawBackReduction) * sin(PI * (footXYDropL)/_gaitDrawBackLength ) );
+      break;
   }
 
   return (int16_t)lrint(stepHeight);

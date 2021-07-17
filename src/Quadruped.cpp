@@ -68,7 +68,8 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
           drawBackDistance = _gait.stepDistance;
         }
         else if (_gait.stepCount == 4) {
-          drawBackDistance = _gait.stepDistance / 3;  
+          drawBackDistance = _gait.stepDistance / 3;    // Notice that this causes innaccuracies; step distances that aren't multiples of 3 will have a step error. This has been 
+                                                        // fixed by making all step distances in a 
         }
         stepDistance = _gait.stepDistance;
       }
@@ -76,10 +77,10 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
       for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
         switch (_gaitSchedule[_currentGaitScheduleIndex][leg]) {
           case TAKE_STEP:
-            legStepPlanner[leg].calculateStep(controlCoordinateX, controlCoordinateY, _gait.stepDuration - 10, stepDistance);
+            legStepPlanner[leg].calculateStep(controlCoordinateX, controlCoordinateY, _gait.stepDuration, stepDistance);
             break;
           case DRAW_BACK:
-            legStepPlanner[leg].calculateDrawBack(controlCoordinateX, controlCoordinateY, _gait.stepDuration - 10, drawBackDistance);
+            legStepPlanner[leg].calculateDrawBack(controlCoordinateX, controlCoordinateY, _gait.stepDuration, drawBackDistance);
             break;
           case PAUSE: break;
         }
