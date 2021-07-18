@@ -20,7 +20,15 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
     legKinematics[leg].init(LEG, inputX, inputY, inputZ, legMotors);
   }
 
-  // Reset this
+  for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+    _footPositions[leg].x = inputX;
+    _footPositions[leg].y = inputY;
+    _footPositions[leg].z = inputZ;
+  }
+  _originFootPosition.x = inputX;
+  _originFootPosition.y = inputY;
+  _originFootPosition.z = inputZ;
+
   _IMUData.x = 0;
   _IMUData.y = 0;
   _IMUData.z = 0;
@@ -28,7 +36,9 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
   _filteredIMUData.y = 0;
   _filteredIMUData.z = 0;
   _haveIMUFeedback = false;
+
 };
+
 
 /*!
  *    @brief Loads a gait that can be used with walk()
@@ -122,25 +132,15 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
 
   }
 
-  updateLegPositions();
-
-};
-
-/*!
- *    @brief Updates the leg step planner
-*/
-void Quadruped::updateLegPositions() {
   for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
     if (legStepPlanner[leg].update()) {
-      int16_t inputX = legStepPlanner[leg].dynamicFootPosition.x;
-      int16_t inputY = legStepPlanner[leg].dynamicFootPosition.y;
-      int16_t inputZ = legStepPlanner[leg].dynamicFootPosition.z;
-
-      legKinematics[leg].setFootEndpoint(inputX, inputY, inputZ);
-
+      _footPositions[leg].x = legStepPlanner[leg].dynamicFootPosition.x;
+      _footPositions[leg].y = legStepPlanner[leg].dynamicFootPosition.y;
+      _footPositions[leg].z = legStepPlanner[leg].dynamicFootPosition.z;
     }
   }
-}
+
+};
 
 
 void Quadruped::giveIMUFeedback(float accelX, float accelY, float accelZ) {
@@ -149,6 +149,7 @@ void Quadruped::giveIMUFeedback(float accelX, float accelY, float accelZ) {
   _IMUData.z = accelZ;
   _haveIMUFeedback = true;
 }
+
 
 /*!
  *    @brief Calculates the roll and pitch angles (YXZ rotation sequence) of the robot based on data provided to giveIMUFeedback(). 
@@ -177,6 +178,65 @@ void Quadruped::getRollPitch(float *roll, float *pitch) {
   *roll = _roll;
   *pitch = _pitch;
 }
+
+void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t offsetZ, int16_t rollAngle, int16_t pitchAngle, int16_t yawAngle) {
+
+  // constrain rotation angles
+  if (abs(rollAngle) > ROLL_MAXIMUM_ANGLE)    rollAngle = ROLL_MAXIMUM_ANGLE;
+  if (abs(pitchAngle) > PITCH_MAXIMUM_ANGLE)  pitchAngle = PITCH_MAXIMUM_ANGLE;
+  if (abs(yawAngle) > YAW_MAXIMUM_ANGLE)      yawAngle = YAW_MAXIMUM_ANGLE;
+  if (rollAngle < 0)  rollAngle *= -1;
+  if (pitchAngle < 0) pitchAngle *= -1;
+  if (yawAngle < 0)   yawAngle *= -1;
+
+  for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+    // Apply the translations first
+    _footPositions[leg].x = _originFootPosition.x - offsetX;   // Positive offset moves robot fowards, negative moves it backwards.
+    
+    if (leg == 1 || leg == 2)   _footPositions[leg].y = _originFootPosition.y + offsetY;   // Positive offset moves robot right, negative moves it left
+    else _footPositions[leg].y = _originFootPosition.y - offsetY;
+
+    _footPositions[leg].z = _originFootPosition.z + offsetZ;    // Positive offset moves robot up, negative moves it down
+
+    int16_t pitchAngleL, rollAngleL, yawAngleL;
+
+    if (leg == 2 || leg == 3)
+      pitchAngleL = -1 * pitchAngle;
+
+    if (leg == 1 || leg == 2) 
+      rollAngleL = -1 * rollAngle;
+    
+    if (leg == 0 || leg == 2) 
+      yawAngleL = -1 * yawAngle;
+
+    _footPositions[leg].z += tan(pitchAngle) * (BODY_LENGTH / 2);
+    _footPositions[leg].z += tan(rollAngle) * (BODY_WIDTH / 2);
+
+  }
+}
+
+
+
+/*!
+ *    @brief Does the full computation for the foot position while considering all user inputs.
+ *    @param inputX When in Standing mode, this is a translation in the X direction. When in Walking mode, this represents a X-axis controller input. 
+ *    @param inputY When in Standing mode, this is a translation in the Y direction. When in Walking mode, this represents a Y-axis controller input. 
+*/
+void Quadruped::compute(RobotMode desiredMode, int16_t inputX, int16_t inputY, int16_t inputZ, int16_t rollAngle, int16_t pitchAngle, int16_t yawAngle) {
+  if (desiredMode == STANDING) {
+    computeStaticMovement(inputX, inputY, inputZ, rollAngle, pitchAngle, yawAngle);
+  }
+
+  else if (_mode == WALKING) {
+    walk(inputX, inputY);
+  }
+
+  for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+    legKinematics[leg].setFootEndpoint(_footPositions[leg].x, _footPositions[leg].y, _footPositions[leg].z);
+  }
+
+}
+
 
 /*!
  *    @brief Returns a LegID enum depending on the index of the leg

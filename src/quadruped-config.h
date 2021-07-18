@@ -14,6 +14,7 @@
 #define LIMB_3  125
 
 #define BODY_LENGTH 230   // Length of your robot front shoulder to the back shoulder. 
+#define BODY_WIDTH  84
 
 // shoulder to foot length constraints in mm - determined using max/min angles for motors 2 & 3
 #define SHOULDER_FOOT_MAX 230
@@ -41,8 +42,12 @@
 /////////////////////////////////////////////////////////////////////
 //******************* Static movement constraints *******************
 ////////////////////////////////////////////////////////////////////
+#define ROLL_MAXIMUM_ANGLE  20    // maximum roll angle in degrees
+#define YAW_MAXIMUM_ANGLE   20    // maximum yaw angle in degrees
+#define PITCH_MAXIMUM_ANGLE 20    // maximum pitch angle in degrees
 
-#define YAW_MAXIMUM_ANGLE 20    // maximum yaw angle in degrees
+#define PERCENT_LENGTH_TRANSLATION   50    // The percentage of the length a translation will be constrained to
+#define PERCENT_WIDTH_TRANSLATION    50    // The percentage of the width a tranlation will be constrained to
 
 //////////////////////////////////////////////////////////////////
 //******************* IMU Feedback + PID gains *******************
