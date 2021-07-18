@@ -181,15 +181,44 @@ void Quadruped::getRollPitch(float *roll, float *pitch) {
 
 void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t offsetZ, int16_t rollAngle, int16_t pitchAngle, int16_t yawAngle) {
 
-  // constrain rotation angles
-  if (abs(rollAngle) > ROLL_MAXIMUM_ANGLE)    rollAngle = ROLL_MAXIMUM_ANGLE;
-  if (abs(pitchAngle) > PITCH_MAXIMUM_ANGLE)  pitchAngle = PITCH_MAXIMUM_ANGLE;
-  if (abs(yawAngle) > YAW_MAXIMUM_ANGLE)      yawAngle = YAW_MAXIMUM_ANGLE;
-  if (rollAngle < 0)  rollAngle *= -1;
-  if (pitchAngle < 0) pitchAngle *= -1;
-  if (yawAngle < 0)   yawAngle *= -1;
+  int16_t offsetXL, offsetYL, rollAngleL, pitchAngleL, yawAngleL;
+
+  // Constraints
+  if (abs(offsetX) > (BODY_LENGTH * (PERCENT_LENGTH_TRANSLATION / 100))) {
+    offsetXL = (int16_t)((float)BODY_LENGTH * ((float)PERCENT_LENGTH_TRANSLATION / 100));
+    if (offsetX < 0)  offsetXL *= -1;
+    offsetX = offsetXL;
+  } 
+
+  if (abs(offsetY) > (BODY_WIDTH * (PERCENT_WIDTH_TRANSLATION/100))) {
+    offsetYL = (int16_t)((float)BODY_WIDTH * ((float)PERCENT_WIDTH_TRANSLATION / 100));
+    if (offsetY < 0)  offsetYL *= -1;
+    offsetY = offsetYL;
+  } 
+
+  if (abs(rollAngle) > ROLL_MAXIMUM_ANGLE) {
+    rollAngleL = ROLL_MAXIMUM_ANGLE;
+    if (rollAngle < 0)  rollAngleL *= -1;
+    rollAngle = rollAngleL;
+  }
+
+  if (abs(pitchAngle) > PITCH_MAXIMUM_ANGLE) {
+    pitchAngleL = PITCH_MAXIMUM_ANGLE;
+    if (pitchAngle < 0)  pitchAngleL *= -1;
+    pitchAngle = pitchAngleL;
+  }
+
+  if (abs(yawAngle) > YAW_MAXIMUM_ANGLE) {
+    yawAngleL = YAW_MAXIMUM_ANGLE;
+    if (yawAngle < 0)  yawAngleL *= -1;
+    yawAngle = yawAngleL;
+  }
 
   for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+    rollAngleL = rollAngle; 
+    pitchAngleL = pitchAngle;
+    yawAngleL = yawAngle;
+
     // Apply the translations first
     _footPositions[leg].x = _originFootPosition.x - offsetX;   // Positive offset moves robot fowards, negative moves it backwards.
     
@@ -197,21 +226,24 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
     else _footPositions[leg].y = _originFootPosition.y - offsetY;
 
     _footPositions[leg].z = _originFootPosition.z + offsetZ;    // Positive offset moves robot up, negative moves it down
-
-    int16_t pitchAngleL, rollAngleL, yawAngleL;
-
-    if (leg == 2 || leg == 3)
-      pitchAngleL = -1 * pitchAngle;
-
-    if (leg == 1 || leg == 2) 
-      rollAngleL = -1 * rollAngle;
     
     if (leg == 0 || leg == 2) 
       yawAngleL = -1 * yawAngle;
 
-    _footPositions[leg].z += tan(pitchAngle) * (BODY_LENGTH / 2);
-    _footPositions[leg].z += tan(rollAngle) * (BODY_WIDTH / 2);
+    // Pitch
+    if (leg == 0 || leg == 1)         _footPositions[leg].z -= tan(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2);
+    else if (leg == 2 || leg == 3)    _footPositions[leg].z += tan(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2);
+    _footPositions[leg].x += tan(pitchAngleL * (PI / 180)) * _footPositions[leg].z;
 
+    // Roll
+    if (leg == 0 || leg == 3) {
+      _footPositions[leg].z += tan(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2);
+      _footPositions[leg].y -= tan(rollAngleL * (PI / 180)) * _footPositions[leg].z;
+    }
+    if (leg == 1 || leg == 2) {
+      _footPositions[leg].z -= tan(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2);
+      _footPositions[leg].y += tan(rollAngleL * (PI / 180)) * _footPositions[leg].z;
+    }
   }
 }
 

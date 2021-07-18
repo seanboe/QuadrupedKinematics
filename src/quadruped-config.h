@@ -17,8 +17,8 @@
 #define BODY_WIDTH  84
 
 // shoulder to foot length constraints in mm - determined using max/min angles for motors 2 & 3
-#define SHOULDER_FOOT_MAX 230
-#define SHOULDER_FOOT_MIN 100
+#define SHOULDER_FOOT_MAX 200
+#define SHOULDER_FOOT_MIN 120
 
 ///////////////////////////////////////////////////////////
 //****************** walking/gait setup *******************
@@ -36,18 +36,18 @@
 ////////////////////////////////////////////////////////////////////
 
 // Maximum motor speed; milliseconds per 180 degrees factor; NOT DEGREES PER MILLISECONDS I.E. SPEED (determined experimentally) this is 0.6 sec / 180 degrees (actual value is 0.52 sec)
-#define MAX_SPEED_INVERSE 3.5
-// #define MAX_SPEED_INVERSE   25
+// #define MAX_SPEED_INVERSE 3.5
+#define MAX_SPEED_INVERSE   25
 
 /////////////////////////////////////////////////////////////////////
 //******************* Static movement constraints *******************
 ////////////////////////////////////////////////////////////////////
 #define ROLL_MAXIMUM_ANGLE  20    // maximum roll angle in degrees
-#define YAW_MAXIMUM_ANGLE   20    // maximum yaw angle in degrees
-#define PITCH_MAXIMUM_ANGLE 20    // maximum pitch angle in degrees
+#define PITCH_MAXIMUM_ANGLE 15    // maximum pitch angle in degrees
+#define YAW_MAXIMUM_ANGLE   10    // maximum yaw angle in degrees
 
-#define PERCENT_LENGTH_TRANSLATION   50    // The percentage of the length a translation will be constrained to
-#define PERCENT_WIDTH_TRANSLATION    50    // The percentage of the width a tranlation will be constrained to
+#define PERCENT_LENGTH_TRANSLATION   10    // The percentage of the length a translation will be constrained to
+#define PERCENT_WIDTH_TRANSLATION    20    // The percentage of the width a tranlation will be constrained to
 
 //////////////////////////////////////////////////////////////////
 //******************* IMU Feedback + PID gains *******************
