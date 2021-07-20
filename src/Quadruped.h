@@ -44,6 +44,7 @@ class Quadruped {
     RobotMode _mode;
     Coordinate _footPositions[ROBOT_LEG_COUNT];
     Coordinate _originFootPosition;
+    int16_t RobotHeight;
 
     // Balanced Standing
     Coordinate _IMUData;

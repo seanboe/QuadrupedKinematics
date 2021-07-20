@@ -28,6 +28,7 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
   _originFootPosition.x = inputX;
   _originFootPosition.y = inputY;
   _originFootPosition.z = inputZ;
+  RobotHeight = inputZ;
 
   _IMUData.x = 0;
   _IMUData.y = 0;
@@ -221,29 +222,71 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
 
     // Apply the translations first
     _footPositions[leg].x = _originFootPosition.x - offsetX;   // Positive offset moves robot fowards, negative moves it backwards.
-    
+
     if (leg == 1 || leg == 2)   _footPositions[leg].y = _originFootPosition.y + offsetY;   // Positive offset moves robot right, negative moves it left
     else _footPositions[leg].y = _originFootPosition.y - offsetY;
 
     _footPositions[leg].z = _originFootPosition.z + offsetZ;    // Positive offset moves robot up, negative moves it down
-    
+    // RobotHeight =_footPositions[leg].z;
+
     if (leg == 0 || leg == 2) 
       yawAngleL = -1 * yawAngle;
 
     // Pitch
-    if (leg == 0 || leg == 1)         _footPositions[leg].z -= tan(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2);
-    else if (leg == 2 || leg == 3)    _footPositions[leg].z += tan(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2);
-    _footPositions[leg].x += tan(pitchAngleL * (PI / 180)) * _footPositions[leg].z;
+    if (leg == 0 || leg == 1) {
+      float phi = (float)_originFootPosition.z + (sin((float)pitchAngleL * ((float)PI / 180)) * ((float)BODY_LENGTH / 2));
+      _footPositions[leg].z = cos(pitchAngleL * (PI / 180)) * phi;
+      _footPositions[leg].x = -1 * (sin(pitchAngleL * (PI / 180)) * phi) - 30;
+      Serial.print("1:");
+      Serial.println(phi);
+      Serial.println(_footPositions[leg].z);
+      Serial.println(_footPositions[leg].x);
+    }
+    else if (leg == 2 || leg == 3) {
+      int16_t phi = _originFootPosition.z - (sin(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2));
+      _footPositions[leg].z = cos(pitchAngleL * (PI / 180)) * phi;
+      _footPositions[leg].x = -1 * (sin(pitchAngleL * (PI / 180)) * phi) - 30;
+      Serial.print("2:");
+      Serial.println(phi);
+      Serial.println(_footPositions[leg].z);
+      Serial.println(_footPositions[leg].x);
+    }
+
+
+    // Old pitch
+    // if (leg == 0 || leg == 1)         _footPositions[leg].z -= tan(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2);
+    // else if (leg == 2 || leg == 3)    _footPositions[leg].z += tan(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2);
+    // _footPositions[leg].x += tan(pitchAngleL * (PI / 180)) * _footPositions[leg].z;
 
     // Roll
-    if (leg == 0 || leg == 3) {
-      _footPositions[leg].z += tan(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2);
-      _footPositions[leg].y -= tan(rollAngleL * (PI / 180)) * _footPositions[leg].z;
-    }
-    if (leg == 1 || leg == 2) {
-      _footPositions[leg].z -= tan(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2);
-      _footPositions[leg].y += tan(rollAngleL * (PI / 180)) * _footPositions[leg].z;
-    }
+    // if (leg == 0 || leg == 3) {
+    //   float phi = (float)_originFootPosition.z + (sin((float)rollAngleL * ((float)PI / 180)) * ((float)BODY_WIDTH / 2));
+    //   _footPositions[leg].z = cos(rollAngleL * (PI / 180)) * phi;
+    //   _footPositions[leg].y = -1 * (sin(rollAngleL * (PI / 180)) * phi);
+    //   Serial.print("1:");
+    //   Serial.println(phi);
+    //   Serial.println(_footPositions[leg].z);
+    //   Serial.println(_footPositions[leg].y);
+    // }
+    // else if (leg == 1 || leg == 2) {
+    //   int16_t phi = _originFootPosition.z - (sin(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2));
+    //   _footPositions[leg].z = cos(rollAngleL * (PI / 180)) * phi;
+    //   _footPositions[leg].y = sin(rollAngleL * (PI / 180)) * phi;
+    //   Serial.print("2:");
+    //   Serial.println(phi);
+    //   Serial.println(_footPositions[leg].z);
+    //   Serial.println(_footPositions[leg].y);
+    // }
+
+    // old roll
+    // if (leg == 0 || leg == 3) {
+    //   _footPositions[leg].z += tan(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2);
+    //   _footPositions[leg].y -= tan(rollAngleL * (PI / 180)) * _footPositions[leg].z;
+    // }
+    // if (leg == 1 || leg == 2) {
+    //   _footPositions[leg].z -= tan(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2);
+    //   _footPositions[leg].y += tan(rollAngleL * (PI / 180)) * _footPositions[leg].z;
+    // }
   }
 }
 
