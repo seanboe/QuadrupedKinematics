@@ -43,8 +43,7 @@ class Quadruped {
     // Global Parameters
     RobotMode _mode;
     Coordinate _footPositions[ROBOT_LEG_COUNT];
-    Coordinate _originFootPosition;
-    int16_t RobotHeight;
+    Coordinate _originFootPosition;             // For static movement, this is what all movements are based on
 
     // Balanced Standing
     Coordinate _IMUData;

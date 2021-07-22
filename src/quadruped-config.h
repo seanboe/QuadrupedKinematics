@@ -43,8 +43,8 @@
 /////////////////////////////////////////////////////////////////////
 //******************* Static movement constraints *******************
 ////////////////////////////////////////////////////////////////////
-#define ROLL_MAXIMUM_ANGLE  30    // maximum roll angle in degrees
-#define PITCH_MAXIMUM_ANGLE 25    // maximum pitch angle in degrees
+#define ROLL_MAXIMUM_ANGLE  20    // maximum roll angle in degrees
+#define PITCH_MAXIMUM_ANGLE 15    // maximum pitch angle in degrees
 #define YAW_MAXIMUM_ANGLE   10    // maximum yaw angle in degrees
 
 #define PERCENT_LENGTH_TRANSLATION   10    // The percentage of the length a translation will be constrained to

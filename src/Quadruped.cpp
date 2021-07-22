@@ -28,7 +28,6 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
   _originFootPosition.x = inputX;
   _originFootPosition.y = inputY;
   _originFootPosition.z = inputZ;
-  RobotHeight = inputZ;
 
   _IMUData.x = 0;
   _IMUData.y = 0;
@@ -180,6 +179,7 @@ void Quadruped::getRollPitch(float *roll, float *pitch) {
   *pitch = _pitch;
 }
 
+
 void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t offsetZ, int16_t rollAngle, int16_t pitchAngle, int16_t yawAngle) {
 
   int16_t offsetXL, offsetYL, rollAngleL, pitchAngleL, yawAngleL;
@@ -215,78 +215,76 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
     yawAngle = yawAngleL;
   }
 
+  rollAngleL = rollAngle; 
+  pitchAngleL = pitchAngle;
+  yawAngleL = yawAngle;
+
   for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
-    rollAngleL = rollAngle; 
-    pitchAngleL = pitchAngle;
-    yawAngleL = yawAngle;
 
-    // Apply the translations first
-    _footPositions[leg].x = _originFootPosition.x - offsetX;   // Positive offset moves robot fowards, negative moves it backwards.
+    _footPositions[leg].x = _originFootPosition.x;
+    _footPositions[leg].y = _originFootPosition.y;
+    _footPositions[leg].z = _originFootPosition.z;
 
-    if (leg == 1 || leg == 2)   _footPositions[leg].y = _originFootPosition.y + offsetY;   // Positive offset moves robot right, negative moves it left
-    else _footPositions[leg].y = _originFootPosition.y - offsetY;
+    int16_t footYOffset, twistXOffset, twistYOffset, twistZOffset;
 
-    _footPositions[leg].z = _originFootPosition.z + offsetZ;    // Positive offset moves robot up, negative moves it down
-    // RobotHeight =_footPositions[leg].z;
+    // Apply X-axis offset while assuming a pitch
+    _footPositions[leg].z -= offsetX * sin(pitchAngleL * (PI / 180));
+    _footPositions[leg].x -= offsetX * cos(pitchAngleL * (PI / 180));
 
-    if (leg == 0 || leg == 2) 
-      yawAngleL = -1 * yawAngle;
+     // Apply Y-axis offset while assuming a roll
+    _footPositions[leg].z -= offsetY * sin(rollAngleL * (PI / 180));
+    footYOffset = offsetY * cos(rollAngleL * (PI / 180));   
+    if (leg == 0 || leg == 3) _footPositions[leg].y -= footYOffset;
+    if (leg == 1 || leg == 2) _footPositions[leg].y += footYOffset;
+
+    // (Used for both calculations)
+    float shoulderToGround = 0;
 
     // Pitch
-    if (leg == 0 || leg == 1) {
-      float phi = (float)_originFootPosition.z + (sin((float)pitchAngleL * ((float)PI / 180)) * ((float)BODY_LENGTH / 2));
-      _footPositions[leg].z = cos(pitchAngleL * (PI / 180)) * phi;
-      _footPositions[leg].x = -1 * (sin(pitchAngleL * (PI / 180)) * phi) - 30;
-      Serial.print("1:");
-      Serial.println(phi);
-      Serial.println(_footPositions[leg].z);
-      Serial.println(_footPositions[leg].x);
-    }
-    else if (leg == 2 || leg == 3) {
-      int16_t phi = _originFootPosition.z - (sin(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2));
-      _footPositions[leg].z = cos(pitchAngleL * (PI / 180)) * phi;
-      _footPositions[leg].x = -1 * (sin(pitchAngleL * (PI / 180)) * phi) - 30;
-      Serial.print("2:");
-      Serial.println(phi);
-      Serial.println(_footPositions[leg].z);
-      Serial.println(_footPositions[leg].x);
-    }
+    if (leg == 0 || leg == 1) 
+      shoulderToGround = (float)_originFootPosition.z - (sin((float)pitchAngleL * ((float)PI / 180)) * ((float)BODY_LENGTH / 2));
+    else if (leg == 2 || leg == 3) 
+      shoulderToGround = (float)_originFootPosition.z + (sin((float)pitchAngleL * ((float)PI / 180)) * ((float)BODY_LENGTH / 2));
 
+    _footPositions[leg].z += (cos(pitchAngleL * (PI / 180)) * shoulderToGround) - (_originFootPosition.z + offsetZ);
+    _footPositions[leg].x += (sin(pitchAngleL * (PI / 180)) * shoulderToGround); 
 
-    // Old pitch
-    // if (leg == 0 || leg == 1)         _footPositions[leg].z -= tan(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2);
-    // else if (leg == 2 || leg == 3)    _footPositions[leg].z += tan(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2);
-    // _footPositions[leg].x += tan(pitchAngleL * (PI / 180)) * _footPositions[leg].z;
+    twistZOffset = sin(pitchAngleL * (PI / 180)) * ((BODY_LENGTH / 2) - cos(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2));
+    twistXOffset = cos(pitchAngleL * (PI / 180)) * ((BODY_LENGTH / 2) - cos(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2));
+
+    if (shoulderToGround > _originFootPosition.z) {
+      _footPositions[leg].z += twistZOffset;
+      _footPositions[leg].x -= twistXOffset;
+    }
+    else if (shoulderToGround < _originFootPosition.z) {
+      _footPositions[leg].z -= twistZOffset;
+      _footPositions[leg].x += twistXOffset;
+    }
 
     // Roll
-    // if (leg == 0 || leg == 3) {
-    //   float phi = (float)_originFootPosition.z + (sin((float)rollAngleL * ((float)PI / 180)) * ((float)BODY_WIDTH / 2));
-    //   _footPositions[leg].z = cos(rollAngleL * (PI / 180)) * phi;
-    //   _footPositions[leg].y = -1 * (sin(rollAngleL * (PI / 180)) * phi);
-    //   Serial.print("1:");
-    //   Serial.println(phi);
-    //   Serial.println(_footPositions[leg].z);
-    //   Serial.println(_footPositions[leg].y);
-    // }
-    // else if (leg == 1 || leg == 2) {
-    //   int16_t phi = _originFootPosition.z - (sin(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2));
-    //   _footPositions[leg].z = cos(rollAngleL * (PI / 180)) * phi;
-    //   _footPositions[leg].y = sin(rollAngleL * (PI / 180)) * phi;
-    //   Serial.print("2:");
-    //   Serial.println(phi);
-    //   Serial.println(_footPositions[leg].z);
-    //   Serial.println(_footPositions[leg].y);
-    // }
+    if (leg == 0 || leg == 3) 
+      shoulderToGround = (float)_originFootPosition.z - (sin((float)rollAngleL * ((float)PI / 180)) * ((float)BODY_WIDTH / 2));
+    else if (leg == 1 || leg == 2) 
+      shoulderToGround = (float)_originFootPosition.z + (sin((float)rollAngleL * ((float)PI / 180)) * ((float)BODY_WIDTH / 2));
 
-    // old roll
-    // if (leg == 0 || leg == 3) {
-    //   _footPositions[leg].z += tan(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2);
-    //   _footPositions[leg].y -= tan(rollAngleL * (PI / 180)) * _footPositions[leg].z;
-    // }
-    // if (leg == 1 || leg == 2) {
-    //   _footPositions[leg].z -= tan(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2);
-    //   _footPositions[leg].y += tan(rollAngleL * (PI / 180)) * _footPositions[leg].z;
-    // }
+    _footPositions[leg].z += (cos(rollAngleL * (PI / 180)) * shoulderToGround) - (_originFootPosition.z + offsetZ);
+
+    footYOffset = (sin(rollAngleL * (PI / 180)) * shoulderToGround);
+    if (leg == 0 || leg == 3) _footPositions[leg].y += footYOffset;
+    if (leg == 1 || leg == 2) _footPositions[leg].y -= footYOffset;
+
+    twistZOffset = sin(rollAngleL * (PI / 180)) * ((BODY_WIDTH / 2) - cos(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2));
+    twistYOffset = cos(rollAngleL * (PI / 180)) * ((BODY_WIDTH / 2) - cos(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2));
+
+    if (shoulderToGround > _originFootPosition.z) {
+      _footPositions[leg].z += twistZOffset;
+      _footPositions[leg].y -= twistYOffset;
+    }
+    else if (shoulderToGround < _originFootPosition.z) {
+      _footPositions[leg].z -= twistZOffset;
+      _footPositions[leg].y += twistYOffset;
+    }
+
   }
 }
 
