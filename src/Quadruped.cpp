@@ -197,6 +197,9 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
     offsetY = offsetYL;
   } 
 
+  if (((offsetZ + _originFootPosition.z) > MAX_HEIGHT) || (offsetZ + _originFootPosition.z) < MIN_HEIGHT)
+  offsetZ = 0;
+
   if (abs(rollAngle) > ROLL_MAXIMUM_ANGLE) {
     rollAngleL = ROLL_MAXIMUM_ANGLE;
     if (rollAngle < 0)  rollAngleL *= -1;
@@ -225,7 +228,7 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
     _footPositions[leg].y = _originFootPosition.y;
     _footPositions[leg].z = _originFootPosition.z;
 
-    int16_t footYOffset, twistXOffset, twistYOffset, twistZOffset;
+    int16_t footYOffset, footXOffset, twistXOffset, twistYOffset, twistZOffset, centerToCornerAngle, centerToCornerLength;
 
     // Apply X-axis offset while assuming a pitch
     _footPositions[leg].z -= offsetX * sin(pitchAngleL * (PI / 180));
@@ -284,6 +287,23 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
       _footPositions[leg].z -= twistZOffset;
       _footPositions[leg].y += twistYOffset;
     }
+
+    // Yaw
+    centerToCornerAngle = atan(((float)BODY_WIDTH / 2) / ((float)BODY_LENGTH / 2)) * (180 / PI);
+    centerToCornerLength = sqrt(pow((BODY_LENGTH / 2), 2) + pow((BODY_WIDTH / 2), 2));
+    footYOffset = centerToCornerLength * cos((90 - centerToCornerAngle - yawAngleL) * (PI / 180)) - (BODY_WIDTH / 2);
+    footXOffset = centerToCornerLength * sin((90 - centerToCornerAngle - yawAngleL) * (PI / 180)) - (BODY_LENGTH / 2);
+    if (leg == 0 || leg == 2) {
+      _footPositions[leg].y += footYOffset;
+      if (leg == 0) _footPositions[leg].x += footXOffset;
+      if (leg == 2) _footPositions[leg].x -= footXOffset;
+    }
+    if (leg == 1 || leg == 3) {
+      _footPositions[leg].y -= footYOffset;
+      if (leg == 1) _footPositions[leg].x -= footXOffset;
+      if (leg == 3) _footPositions[leg].x += footXOffset;
+    }
+    // _footPositions[leg].z += sqrt(pow((_originFootPosition.z + offsetZ), 2) + pow(footYOffset, 2)) - (_originFootPosition.z + offsetZ);
 
   }
 }
