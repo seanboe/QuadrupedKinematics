@@ -2,6 +2,7 @@
 #define QUADRUPED_H
 
 #include <Arduino.h>
+#include <PID_v1.h>
 #include "StepPlanner.h"
 #include "Kinematics.h"
 #include "quadruped-config.h"
@@ -22,19 +23,22 @@ class Quadruped {
   public:
     Quadruped();
 
-    void init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[]);
+    void init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[], bool willProvideIMUFeedback = false);
+    void setMode(RobotMode mode);
 
     void loadGait(int16_t gaitParameters[], int16_t gaitSchedule[][ROBOT_LEG_COUNT]);
     void walk(int16_t controlCoordinateX, int16_t controlCoordinateY);
 
-    void giveIMUFeedback(float accelX, float accelY, float accelZ);
-    void getRollPitch(float *roll, float *pitch);
+    void giveIMUFeedback(double accelX, double accelY, double accelZ);
+    void getPitchRoll(double *roll, double *pitch);
+    void setBalanceOrientation(int16_t rollEndpoint, int16_t pitchEndpoint);
 
     StepPlanner legStepPlanner[ROBOT_LEG_COUNT];
     Kinematics  legKinematics[ROBOT_LEG_COUNT];
 
     void computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t offsetZ, int16_t rollAngle, int16_t pitchAngle, int16_t yawAngle);
-    void compute(RobotMode desiredMode, int16_t inputX, int16_t inputY, int16_t input, int16_t rotationX, int16_t rotationY, int16_t rotationZ);
+    void compute(int16_t inputX, int16_t inputY, int16_t inputZ, int16_t rotationX, int16_t rotationY, int16_t rotationZ);
+
 
   private:
 
@@ -48,7 +52,21 @@ class Quadruped {
     // Balanced Standing
     Coordinate _IMUData;
     Coordinate _filteredIMUData;
-    bool _haveIMUFeedback;    
+    bool _willProvideIMUFeedback;    
+    // Pitch
+    PID pitchPID;
+    double _measuredPitchAngle;
+    double _outputPitchAngle;
+    double _pitchSetpoint;
+    // Roll
+    PID rollPID;
+    double _measuredRollAngle;
+    double _outputRollAngle;
+    double _rollSetpoint;
+    
+    #ifdef WANTS_FIFO_BUFFER
+    double FIFOPIDBuffer[FIFO_BUFFER_SIZE];
+    #endif
 
     // Walking
     Gait _gait;

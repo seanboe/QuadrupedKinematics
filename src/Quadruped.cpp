@@ -1,7 +1,9 @@
 #include "Quadruped.h"
 
 
-Quadruped::Quadruped(void) {};
+Quadruped::Quadruped() : pitchPID(&_measuredPitchAngle, &_outputPitchAngle, &_pitchSetpoint, PITCH_KP, PITCH_KI, PITCH_KD, DIRECT),
+                         rollPID(&_measuredRollAngle, &_outputRollAngle, &_rollSetpoint, ROLL_KP, ROLL_KI, ROLL_KD, DIRECT)
+{};
 
 /*!
  *    @brief Initializes robot parameters
@@ -10,7 +12,7 @@ Quadruped::Quadruped(void) {};
  *    @param inputZ Initial Z input
  *    @param legMotors  Array of Motor structs
 */
-void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[]) {
+void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[], bool willProvideIMUFeedback) {
 
   _mode = STANDING;
 
@@ -32,13 +34,18 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
   _IMUData.x = 0;
   _IMUData.y = 0;
   _IMUData.z = 0;
-  _filteredIMUData.x = 0;
-  _filteredIMUData.y = 0;
-  _filteredIMUData.z = 0;
-  _haveIMUFeedback = false;
+  _willProvideIMUFeedback = willProvideIMUFeedback;
+  pitchPID.SetMode(AUTOMATIC);
+  pitchPID.SetOutputLimits(PID_MIN_OUTPUT_LIMIT, PID_MAX_OUTPUT_LIMIT);
+
+  setBalanceOrientation(0, 0);
 
 };
 
+
+void Quadruped::setMode(RobotMode mode) {
+  _mode = mode;
+}
 
 /*!
  *    @brief Loads a gait that can be used with walk()
@@ -143,11 +150,10 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
 };
 
 
-void Quadruped::giveIMUFeedback(float accelX, float accelY, float accelZ) {
+void Quadruped::giveIMUFeedback(double accelX, double accelY, double accelZ) {
   _IMUData.x = accelX;
   _IMUData.y = accelY;
   _IMUData.z = accelZ;
-  _haveIMUFeedback = true;
 }
 
 
@@ -157,10 +163,10 @@ void Quadruped::giveIMUFeedback(float accelX, float accelY, float accelZ) {
  *    @param roll A pointer to roll angle variable
  *    @param pitch A pointer to pitch angle variable
 */
-void Quadruped::getRollPitch(float *roll, float *pitch) {
-  if (!_haveIMUFeedback) return;
+void Quadruped::getPitchRoll(double *pitch, double *roll) {
+  if (!_willProvideIMUFeedback) return;
   
-  float _roll, _pitch;
+  double _roll, _pitch;
 
   _filteredIMUData.x = _IMUData.x * LPF_SMOOTHING_FACTOR + (_filteredIMUData.x * (1.0 - LPF_SMOOTHING_FACTOR));
   _filteredIMUData.y = _IMUData.y * LPF_SMOOTHING_FACTOR + (_filteredIMUData.y * (1.0 - LPF_SMOOTHING_FACTOR));
@@ -179,6 +185,11 @@ void Quadruped::getRollPitch(float *roll, float *pitch) {
   *pitch = _pitch;
 }
 
+void Quadruped::setBalanceOrientation(int16_t rollSetpoint, int16_t pitchSetpoint) {
+  _pitchSetpoint = pitchSetpoint;
+  _rollSetpoint = rollSetpoint;
+};
+
 
 void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t offsetZ, int16_t rollAngle, int16_t pitchAngle, int16_t yawAngle) {
 
@@ -191,7 +202,7 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
     offsetX = offsetXL;
   } 
 
-  if (abs(offsetY) > (BODY_WIDTH * (PERCENT_WIDTH_TRANSLATION/100))) {
+  if (abs(offsetY) > (BODY_WIDTH * (PERCENT_WIDTH_TRANSLATION / 100))) {
     offsetYL = (int16_t)((float)BODY_WIDTH * ((float)PERCENT_WIDTH_TRANSLATION / 100));
     if (offsetY < 0)  offsetYL *= -1;
     offsetY = offsetYL;
@@ -303,7 +314,6 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
       if (leg == 1) _footPositions[leg].x -= footXOffset;
       if (leg == 3) _footPositions[leg].x += footXOffset;
     }
-    // _footPositions[leg].z += sqrt(pow((_originFootPosition.z + offsetZ), 2) + pow(footYOffset, 2)) - (_originFootPosition.z + offsetZ);
 
   }
 }
@@ -315,9 +325,19 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
  *    @param inputX When in Standing mode, this is a translation in the X direction. When in Walking mode, this represents a X-axis controller input. 
  *    @param inputY When in Standing mode, this is a translation in the Y direction. When in Walking mode, this represents a Y-axis controller input. 
 */
-void Quadruped::compute(RobotMode desiredMode, int16_t inputX, int16_t inputY, int16_t inputZ, int16_t rollAngle, int16_t pitchAngle, int16_t yawAngle) {
-  if (desiredMode == STANDING) {
+void Quadruped::compute(int16_t inputX, int16_t inputY, int16_t inputZ, int16_t rollAngle, int16_t pitchAngle, int16_t yawAngle) {
+  if (_mode == STANDING) {
     computeStaticMovement(inputX, inputY, inputZ, rollAngle, pitchAngle, yawAngle);
+  }
+
+  else if (_mode == BALANCED_STANDING) {
+    getPitchRoll(&_measuredPitchAngle, &_measuredRollAngle);
+    pitchPID.Compute();
+    computeStaticMovement(0, 0, 0, 0, _outputPitchAngle, 0);
+    Serial.print(_measuredPitchAngle);
+    Serial.print(",");
+    Serial.println(0);
+
   }
 
   else if (_mode == WALKING) {

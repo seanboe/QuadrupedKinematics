@@ -37,15 +37,15 @@
 ////////////////////////////////////////////////////////////////////
 
 // Maximum motor speed; milliseconds per 180 degrees factor; NOT DEGREES PER MILLISECONDS I.E. SPEED (determined experimentally) this is 0.6 sec / 180 degrees (actual value is 0.52 sec)
-// #define MAX_SPEED_INVERSE 3.5
-#define MAX_SPEED_INVERSE   20
+#define MAX_SPEED_INVERSE 3.5
+// #define MAX_SPEED_INVERSE   20
 
 /////////////////////////////////////////////////////////////////////
 //******************* Static movement constraints *******************
 ////////////////////////////////////////////////////////////////////
 #define ROLL_MAXIMUM_ANGLE  20    // maximum roll angle in degrees
 #define PITCH_MAXIMUM_ANGLE 15    // maximum pitch angle in degrees
-#define YAW_MAXIMUM_ANGLE   30    // maximum yaw angle in degrees
+#define YAW_MAXIMUM_ANGLE   20    // maximum yaw angle in degrees
 
 #define PERCENT_LENGTH_TRANSLATION   5    // The percentage of the length a translation will be constrained to
 #define PERCENT_WIDTH_TRANSLATION    10    // The percentage of the width a tranlation will be constrained to
@@ -58,5 +58,26 @@
 
 #define LPF_SMOOTHING_FACTOR  0.1     // The smoothing factor for the low pass filter on the imu
 #define IMU_FLIPPED                   // Uncomment this if your IMU is flipped 180 degrees (upside down)
+
+#define PID_MIN_OUTPUT_LIMIT  -180
+#define PID_MAX_OUTPUT_LIMIT    180
+
+// I've found that it's easiest to use empirical gain tuning to find pid constants:
+// https://www.youtube.com/watch?v=uXnDwojRb1g
+
+// Pitch
+// 0.4 oscillating (KP)
+// #define PITCH_KP   0.2
+// #define PITCH_KI   1.1
+// #define PITCH_KD   0.03
+#define PITCH_KP   0.15
+#define PITCH_KI   3
+// #define PITCH_KD   0.02
+#define PITCH_KD   0
+
+// Roll
+#define ROLL_KP    0
+#define ROLL_KI    0
+#define ROLL_KD    0
 
 #endif
