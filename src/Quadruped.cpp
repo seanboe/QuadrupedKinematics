@@ -36,8 +36,9 @@ void Quadruped::init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMo
   _IMUData.z = 0;
   _willProvideIMUFeedback = willProvideIMUFeedback;
   pitchPID.SetMode(AUTOMATIC);
-  pitchPID.SetOutputLimits(PID_MIN_OUTPUT_LIMIT, PID_MAX_OUTPUT_LIMIT);
-
+  pitchPID.SetOutputLimits(-PITCH_MAXIMUM_ANGLE, PITCH_MAXIMUM_ANGLE);
+  rollPID.SetMode(AUTOMATIC);
+  rollPID.SetOutputLimits(-ROLL_MAXIMUM_ANGLE, ROLL_MAXIMUM_ANGLE);
   setBalanceOrientation(0, 0);
 
 };
@@ -333,8 +334,11 @@ void Quadruped::compute(int16_t inputX, int16_t inputY, int16_t inputZ, int16_t 
   else if (_mode == BALANCED_STANDING) {
     getPitchRoll(&_measuredPitchAngle, &_measuredRollAngle);
     pitchPID.Compute();
-    computeStaticMovement(0, 0, 0, 0, _outputPitchAngle, 0);
+    rollPID.Compute();
+    computeStaticMovement(0, 0, 0, _outputRollAngle, _outputPitchAngle, 0);
     Serial.print(_measuredPitchAngle);
+    Serial.print(",");
+    Serial.print(_measuredRollAngle);
     Serial.print(",");
     Serial.println(0);
 

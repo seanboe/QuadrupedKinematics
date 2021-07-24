@@ -43,7 +43,7 @@ class Quadruped {
   private:
 
     LegID _enumFromIndex(int8_t index);
-
+    
     // Global Parameters
     RobotMode _mode;
     Coordinate _footPositions[ROBOT_LEG_COUNT];
@@ -63,10 +63,6 @@ class Quadruped {
     double _measuredRollAngle;
     double _outputRollAngle;
     double _rollSetpoint;
-    
-    #ifdef WANTS_FIFO_BUFFER
-    double FIFOPIDBuffer[FIFO_BUFFER_SIZE];
-    #endif
 
     // Walking
     Gait _gait;
