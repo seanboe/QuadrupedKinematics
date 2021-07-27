@@ -47,9 +47,9 @@
 #define PITCH_MAXIMUM_ANGLE 15    // maximum pitch angle in degrees
 #define YAW_MAXIMUM_ANGLE   20    // maximum yaw angle in degrees
 
-#define PERCENT_LENGTH_TRANSLATION   5    // The percentage of the length a translation will be constrained to
+#define PERCENT_LENGTH_TRANSLATION   10    // The percentage of the length a translation will be constrained to
 #define PERCENT_WIDTH_TRANSLATION    10    // The percentage of the width a tranlation will be constrained to
-#define MAX_HEIGHT                   200
+#define MAX_HEIGHT                   220
 #define MIN_HEIGHT                   120
 
 //////////////////////////////////////////////////////////////////
@@ -58,6 +58,8 @@
 
 #define LPF_SMOOTHING_FACTOR  0.1     // The smoothing factor for the low pass filter on the imu
 #define IMU_FLIPPED                   // Uncomment this if your IMU is flipped 180 degrees (upside down)
+
+#define PID_UPDATE_FREQUENCY  100     // Max 1000Hz
 
 // Pitch
 #define PITCH_KP   0.15

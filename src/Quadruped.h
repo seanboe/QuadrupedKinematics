@@ -32,6 +32,7 @@ class Quadruped {
     void giveIMUFeedback(double accelX, double accelY, double accelZ);
     void getPitchRoll(double *roll, double *pitch);
     void setBalanceOrientation(int16_t rollEndpoint, int16_t pitchEndpoint);
+    bool wantsIMUUpdate();
 
     StepPlanner legStepPlanner[ROBOT_LEG_COUNT];
     Kinematics  legKinematics[ROBOT_LEG_COUNT];
@@ -45,14 +46,16 @@ class Quadruped {
     LegID _enumFromIndex(int8_t index);
     
     // Global Parameters
-    RobotMode _mode;
+    RobotMode _mode;                             // Actual Mode
+    RobotMode _userDesiredMode;                  // The mode requested by the user
     Coordinate _footPositions[ROBOT_LEG_COUNT];
     Coordinate _originFootPosition;             // For static movement, this is what all movements are based on
 
     // Balanced Standing
     Coordinate _IMUData;
     Coordinate _filteredIMUData;
-    bool _willProvideIMUFeedback;    
+    bool _willProvideIMUFeedback;   
+    
     // Pitch
     PID pitchPID;
     double _measuredPitchAngle;
