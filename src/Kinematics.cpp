@@ -123,7 +123,7 @@ void Kinematics::solveFtShldrLength(float demandFtShldr, float *demandAngle2, fl
     _demandFtShldrLength = SHOULDER_FOOT_MIN;
 
   // Use the Law of Cosines to solve for the angles of motor 3 and convert to degrees
-  float _demandAngle3 = acos( ( pow(demandFtShldr, 2) - pow(LIMB_2, 2) - pow(LIMB_3, 2) ) / (-2 * LIMB_2 * LIMB_3) ); // demand angle for position 3 (operated by M3)
+  float _demandAngle3 = acos( ( pow(_demandFtShldrLength, 2) - pow(LIMB_2, 2) - pow(LIMB_3, 2) ) / (-2 * LIMB_2 * LIMB_3) ); // demand angle for position 3 (operated by M3)
   _demandAngle3 = ((_demandAngle3 * 180) / PI);   //convert to degrees
 
   // Use demandAngle3 to calculate for demandAngle2 (angle for M2)
