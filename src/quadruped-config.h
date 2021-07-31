@@ -10,16 +10,21 @@
 // limb length in millimeters
 // The library assumes that your robot is symmetric.
 #define LIMB_1  45
-#define LIMB_2  125
-#define LIMB_3  125
+#define LIMB_2  100
+#define LIMB_3  100
 
 #define BODY_LENGTH 230   // Length of your robot front shoulder to the back shoulder. 
 #define BODY_WIDTH  170    // Width of your robot from the y-axis of rotation of one leg to the other leg,
                           // whether it be VIRTUAL OR REAL. This should be a point above the foot.
 
 // shoulder to foot length constraints in mm - determined using max/min angles for motors 2 & 3
-#define SHOULDER_FOOT_MAX 200
-#define SHOULDER_FOOT_MIN 120
+// For 125mm legs:
+// #define SHOULDER_FOOT_MAX 200
+// #define SHOULDER_FOOT_MIN 120
+
+// For 100mm legs:
+#define SHOULDER_FOOT_MAX    190
+#define SHOULDER_FOOT_MIN    100
 
 ///////////////////////////////////////////////////////////
 //****************** walking/gait setup *******************
@@ -49,8 +54,8 @@
 
 #define PERCENT_LENGTH_TRANSLATION   10    // The percentage of the length a translation will be constrained to
 #define PERCENT_WIDTH_TRANSLATION    10    // The percentage of the width a tranlation will be constrained to
-#define MAX_HEIGHT                   220
-#define MIN_HEIGHT                   120
+#define MAX_HEIGHT                   180
+#define MIN_HEIGHT                   110
 
 //////////////////////////////////////////////////////////////////
 //******************* IMU Feedback + PID gains *******************
@@ -61,12 +66,12 @@
 
 #define PID_UPDATE_FREQUENCY  100     // Max 1000Hz
 
-// Pitch
+// // Pitch
 #define PITCH_KP   0.15
 #define PITCH_KI   2.8
 #define PITCH_KD   0
 
-// Roll
+// // Roll
 #define ROLL_KP    0.4
 #define ROLL_KI    1.8
 #define ROLL_KD    0

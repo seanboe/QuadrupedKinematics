@@ -27,7 +27,7 @@ class Quadruped {
     void setMode(RobotMode mode);
 
     void loadGait(int16_t gaitParameters[], int16_t gaitSchedule[][ROBOT_LEG_COUNT]);
-    void walk(int16_t controlCoordinateX, int16_t controlCoordinateY);
+    void walk(int16_t controlCoordinateX, int16_t controlCoordinateY, Coordinate outputFootPositions[ROBOT_LEG_COUNT]);
 
     void giveIMUFeedback(double accelX, double accelY, double accelZ);
     void getPitchRoll(double *roll, double *pitch);
@@ -37,8 +37,8 @@ class Quadruped {
     StepPlanner legStepPlanner[ROBOT_LEG_COUNT];
     Kinematics  legKinematics[ROBOT_LEG_COUNT];
 
-    void computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t offsetZ, int16_t rollAngle, int16_t pitchAngle, int16_t yawAngle);
-    void compute(int16_t inputX, int16_t inputY, int16_t inputZ, int16_t rotationX, int16_t rotationY, int16_t rotationZ);
+    void computeStaticMovement(Coordinate translationOffsets, Coordinate rotationAngles, Coordinate outputFootPositions[ROBOT_LEG_COUNT]);                                 // x = roll, y = pitch, z = yaw (the axis each rotation is about)
+    void compute(int16_t inputX = 0, int16_t inputY = 0, int16_t inputZ = 0, int16_t rotationX = 0, int16_t rotationY = 0, int16_t rotationZ = 0);
 
 
   private:
@@ -55,7 +55,7 @@ class Quadruped {
     Coordinate _IMUData;
     Coordinate _filteredIMUData;
     bool _willProvideIMUFeedback;   
-    
+
     // Pitch
     PID pitchPID;
     double _measuredPitchAngle;

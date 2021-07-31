@@ -9,15 +9,18 @@ StepPlanner::StepPlanner(void) {};
  *    @param offsetY The offset y direction from y = 0... you can have the walking occur further right or further left.
  *    @param robotHeight the default hieght of the robot. Every step will end in the leg being this height
 */
-void StepPlanner::init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t robotHeight) {
+void StepPlanner::init(LegID legID, int16_t originXOffset, int16_t originYOffset, int16_t robotHeight) {
 
   _legID = legID;
 
   _mode = STANDING;
   _robotHeight = robotHeight;
 
-  _offsetX = offsetX;
-  _offsetY = offsetY;
+  _originXOffset = originXOffset;
+  _originYOffset = originYOffset;
+
+  _stepOffsetX = 0;
+  _stepOffsetY = 0;
 
   returnToOrigin();
 }
@@ -38,8 +41,8 @@ bool StepPlanner::update() {
 
   if ((millis() - _previousUpdateTime) % GAIT_UPDATE_FREQUENCY == 0) {
 
-    dynamicFootPosition.x = footPosX.update() + _offsetX;
-    dynamicFootPosition.y = footPosY.update() + _offsetY;
+    dynamicFootPosition.x = footPosX.update() + _originXOffset;
+    dynamicFootPosition.y = footPosY.update() + _originYOffset;
     dynamicFootPosition.z = getStepHeight(footDrop.update());
 
     _previousUpdateTime = (millis() - 1);
@@ -108,6 +111,24 @@ void StepPlanner::updateEndpoint(int16_t newControlCoordinateX, int16_t newContr
 
   footPosX.go(_stepEndpoint.x, timeLeft, LINEAR, ONCEFORWARD);
   footPosY.go(_stepEndpoint.y, timeLeft, LINEAR, ONCEFORWARD);
+}
+
+
+bool StepPlanner::applyStepOffset(int16_t offsetX, int16_t offsetY) {
+
+  _stepOffsetX = offsetX;
+  _stepOffsetY = offsetY;
+
+  long  timeLeft = (footPosX.getDuration() - ((footPosX.getCompletion() / 100) * footPosX.getDuration()));
+
+  // Only update if the step is still ongoing
+  if (timeLeft == 0) return false;
+
+  footPosX.go(_stepEndpoint.x + _stepOffsetX, timeLeft, LINEAR, ONCEFORWARD);
+  footPosY.go(_stepEndpoint.y + _stepOffsetY, timeLeft, LINEAR, ONCEFORWARD);
+
+  return true;
+
 }
 
 /*!

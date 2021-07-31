@@ -6,11 +6,6 @@
 #include "common.h"
 #include <Ramp.h>
 
-// typedef struct {
-//   float x;
-//   float y;
-//   float z;
-// } Coordinate;
 
 typedef enum {
   FIRST_STEP_ARC, FIRST_STEP_DRAW_BACK,
@@ -21,12 +16,13 @@ class StepPlanner {
 
   public:
     StepPlanner();
-    void init(LegID legID, int16_t offsetX, int16_t offsetY, int16_t robotHeight);
+    void init(LegID legID, int16_t originXOffset, int16_t originYOffset, int16_t robotHeight);
     void setGaitParameters(int16_t amplitude, int16_t drawBackReduction);
     void requestStep(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance);
     void requestDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance);
     void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDistance);
     void updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY);
+    bool applyStepOffset(int16_t offsetX, int16_t offsetY);
     bool update();
 
     void setNewHeight(int16_t newHeight);
@@ -41,8 +37,11 @@ class StepPlanner {
 
     LegID _legID; 
     int16_t _robotHeight;
-    int16_t _offsetX;
-    int16_t _offsetY;
+    int16_t _originXOffset;
+    int16_t _originYOffset;
+
+    int16_t _stepOffsetX;
+    int16_t _stepOffsetY;
 
     rampFloat footPosX;
     rampFloat footPosY;

@@ -77,7 +77,7 @@ void Quadruped::loadGait(int16_t gaitParameters[], int16_t gaitSchedule[][ROBOT_
  *    @param controlCoordinateX X coordinate of a joystick
  *    @param controlCoordinateY Y coordinate of a joystick
 */
-void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
+void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY, Coordinate outputFootPositions[ROBOT_LEG_COUNT]) {
 
   if (_mode == STANDING) {
     _mode = WALKING;
@@ -115,6 +115,10 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
         stepDistance = _gait.stepDistance;
       }
 
+      if (_gaitSchedule[_currentGaitScheduleIndex][0] == SHIFT) {
+        
+      }
+
       for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
         switch (_gaitSchedule[_currentGaitScheduleIndex][leg]) {
           case TAKE_STEP:
@@ -123,7 +127,6 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
           case DRAW_BACK:
             legStepPlanner[leg].requestDrawBack(controlCoordinateX, controlCoordinateY, _gait.stepDuration, drawBackDistance);
             break;
-          case PAUSE: break;
         }
       }
 
@@ -138,6 +141,12 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY) {
     }
 
     if ((millis() - _previousStepUpdate) % _gait.stepDuration != 0) _justUpdatedWalk = false;
+
+  for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+    outputFootPositions[leg].x = legStepPlanner[leg].dynamicFootPosition.x;
+    outputFootPositions[leg].y = legStepPlanner[leg].dynamicFootPosition.y;
+    outputFootPositions[leg].z = legStepPlanner[leg].dynamicFootPosition.z;
+  }
 
   }
 
@@ -201,9 +210,16 @@ void Quadruped::setBalanceOrientation(int16_t rollSetpoint, int16_t pitchSetpoin
 };
 
 
-void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t offsetZ, int16_t rollAngle, int16_t pitchAngle, int16_t yawAngle) {
+void Quadruped::computeStaticMovement(Coordinate translationOffsets, Coordinate rotationAngles, Coordinate outputFootPositions[ROBOT_LEG_COUNT]) {
 
-  int16_t offsetXL, offsetYL, rollAngleL, pitchAngleL, yawAngleL;
+  int16_t offsetX = translationOffsets.x;
+  int16_t offsetY = translationOffsets.y;
+  int16_t offsetZ = translationOffsets.z;
+  int16_t rollAngle = rotationAngles.x;
+  int16_t pitchAngle = rotationAngles.y;
+  int16_t yawAngle = rotationAngles.z;
+
+  int16_t offsetXL, offsetYL, rollAngleL, pitchAngleL, yawAngleL;   // Used for intermediate computations;
 
   // Constraints
   if (abs(offsetX) > (BODY_LENGTH * (PERCENT_LENGTH_TRANSLATION / 100))) {
@@ -218,8 +234,12 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
     offsetY = offsetYL;
   } 
 
-  if (((offsetZ + _originFootPosition.z) > MAX_HEIGHT) || (offsetZ + _originFootPosition.z) < MIN_HEIGHT)
-  offsetZ = 0;
+  if ((offsetZ + _originFootPosition.z) > MAX_HEIGHT) {
+    offsetZ = MAX_HEIGHT - _originFootPosition.z;
+  }
+  else if ((offsetZ + _originFootPosition.z) < MIN_HEIGHT) {
+    offsetZ = MIN_HEIGHT - _originFootPosition.z;
+  }
 
   if (abs(rollAngle) > ROLL_MAXIMUM_ANGLE) {
     rollAngleL = ROLL_MAXIMUM_ANGLE;
@@ -245,21 +265,21 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
 
   for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
 
-    _footPositions[leg].x = _originFootPosition.x;
-    _footPositions[leg].y = _originFootPosition.y;
-    _footPositions[leg].z = _originFootPosition.z + offsetZ;
+    outputFootPositions[leg].x = _originFootPosition.x;
+    outputFootPositions[leg].y = _originFootPosition.y;
+    outputFootPositions[leg].z = _originFootPosition.z + offsetZ;
 
     int16_t footYOffset, footXOffset, twistXOffset, twistYOffset, twistZOffset, centerToCornerAngle, centerToCornerLength;
 
     // Apply X-axis offset while assuming a pitch
-    _footPositions[leg].z += offsetX * sin(pitchAngleL * (PI / 180));
-    _footPositions[leg].x -= offsetX * cos(pitchAngleL * (PI / 180));
+    outputFootPositions[leg].z += offsetX * sin(pitchAngleL * (PI / 180));
+    outputFootPositions[leg].x -= offsetX * cos(pitchAngleL * (PI / 180));
 
      // Apply Y-axis offset while assuming a roll
-    _footPositions[leg].z -= offsetY * sin(rollAngleL * (PI / 180));
+    outputFootPositions[leg].z -= offsetY * sin(rollAngleL * (PI / 180));
     footYOffset = offsetY * cos(rollAngleL * (PI / 180));   
-    if (leg == 0 || leg == 3) _footPositions[leg].y += footYOffset;
-    if (leg == 1 || leg == 2) _footPositions[leg].y -= footYOffset;
+    if (leg == 0 || leg == 3) outputFootPositions[leg].y += footYOffset;
+    if (leg == 1 || leg == 2) outputFootPositions[leg].y -= footYOffset;
 
     // (Used for both calculations)
     float shoulderToGround = 0;
@@ -270,19 +290,19 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
     else if (leg == 2 || leg == 3) 
       shoulderToGround = (float)(_originFootPosition.z + offsetZ) + (sin((float)pitchAngleL * ((float)PI / 180)) * ((float)BODY_LENGTH / 2));
 
-    _footPositions[leg].z += (cos(pitchAngleL * (PI / 180)) * shoulderToGround) - (_originFootPosition.z + offsetZ);
-    _footPositions[leg].x += (sin(pitchAngleL * (PI / 180)) * shoulderToGround); 
+    outputFootPositions[leg].z += (cos(pitchAngleL * (PI / 180)) * shoulderToGround) - (_originFootPosition.z + offsetZ);
+    outputFootPositions[leg].x += (sin(pitchAngleL * (PI / 180)) * shoulderToGround); 
 
     twistZOffset = sin(pitchAngleL * (PI / 180)) * ((BODY_LENGTH / 2) - cos(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2));
     twistXOffset = cos(pitchAngleL * (PI / 180)) * ((BODY_LENGTH / 2) - cos(pitchAngleL * (PI / 180)) * (BODY_LENGTH / 2));
 
     if (shoulderToGround > (_originFootPosition.z + offsetZ)) {
-      _footPositions[leg].z += twistZOffset;
-      _footPositions[leg].x -= twistXOffset;
+      outputFootPositions[leg].z += twistZOffset;
+      outputFootPositions[leg].x -= twistXOffset;
     }
     else if (shoulderToGround < (_originFootPosition.z + offsetZ)) {
-      _footPositions[leg].z -= twistZOffset;
-      _footPositions[leg].x += twistXOffset;
+      outputFootPositions[leg].z -= twistZOffset;
+      outputFootPositions[leg].x += twistXOffset;
     }
 
     // Roll
@@ -291,22 +311,22 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
     else if (leg == 1 || leg == 2) 
       shoulderToGround = (float)(_originFootPosition.z + offsetZ)+ (sin((float)rollAngleL * ((float)PI / 180)) * ((float)BODY_WIDTH / 2));
 
-    _footPositions[leg].z += (cos(rollAngleL * (PI / 180)) * shoulderToGround) - (_originFootPosition.z + offsetZ);
+    outputFootPositions[leg].z += (cos(rollAngleL * (PI / 180)) * shoulderToGround) - (_originFootPosition.z + offsetZ);
 
     footYOffset = (sin(rollAngleL * (PI / 180)) * shoulderToGround);
-    if (leg == 0 || leg == 3) _footPositions[leg].y += footYOffset;
-    if (leg == 1 || leg == 2) _footPositions[leg].y -= footYOffset;
+    if (leg == 0 || leg == 3) outputFootPositions[leg].y += footYOffset;
+    if (leg == 1 || leg == 2) outputFootPositions[leg].y -= footYOffset;
 
     twistZOffset = sin(rollAngleL * (PI / 180)) * ((BODY_WIDTH / 2) - cos(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2));
     twistYOffset = cos(rollAngleL * (PI / 180)) * ((BODY_WIDTH / 2) - cos(rollAngleL * (PI / 180)) * (BODY_WIDTH / 2));
 
     if (shoulderToGround > (_originFootPosition.z + offsetZ)) {
-      _footPositions[leg].z += twistZOffset;
-      _footPositions[leg].y -= twistYOffset;
+      outputFootPositions[leg].z += twistZOffset;
+      outputFootPositions[leg].y -= twistYOffset;
     }
     else if (shoulderToGround < (_originFootPosition.z + offsetZ)) {
-      _footPositions[leg].z -= twistZOffset;
-      _footPositions[leg].y += twistYOffset;
+      outputFootPositions[leg].z -= twistZOffset;
+      outputFootPositions[leg].y += twistYOffset;
     }
 
     // Yaw
@@ -315,14 +335,14 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
     footYOffset = centerToCornerLength * cos((90 - centerToCornerAngle - yawAngleL) * (PI / 180)) - (BODY_WIDTH / 2);
     footXOffset = centerToCornerLength * sin((90 - centerToCornerAngle - yawAngleL) * (PI / 180)) - (BODY_LENGTH / 2);
     if (leg == 0 || leg == 2) {
-      _footPositions[leg].y += footYOffset;
-      if (leg == 0) _footPositions[leg].x += footXOffset;
-      if (leg == 2) _footPositions[leg].x -= footXOffset;
+      outputFootPositions[leg].y += footYOffset;
+      if (leg == 0) outputFootPositions[leg].x += footXOffset;
+      if (leg == 2) outputFootPositions[leg].x -= footXOffset;
     }
     if (leg == 1 || leg == 3) {
-      _footPositions[leg].y -= footYOffset;
-      if (leg == 1) _footPositions[leg].x -= footXOffset;
-      if (leg == 3) _footPositions[leg].x += footXOffset;
+      outputFootPositions[leg].y -= footYOffset;
+      if (leg == 1) outputFootPositions[leg].x -= footXOffset;
+      if (leg == 3) outputFootPositions[leg].x += footXOffset;
     }
 
   }
@@ -336,8 +356,22 @@ void Quadruped::computeStaticMovement(int16_t offsetX, int16_t offsetY, int16_t 
  *    @param inputY When in Standing mode, this is a translation in the Y direction. When in Walking mode, this represents a Y-axis controller input. 
 */
 void Quadruped::compute(int16_t inputX, int16_t inputY, int16_t inputZ, int16_t rollAngle, int16_t pitchAngle, int16_t yawAngle) {
+
+  Coordinate translationInputs;
+  Coordinate rotationInputs;
+  translationInputs.x = inputX;
+  translationInputs.y = inputY;
+  translationInputs.z = inputZ;
+  rotationInputs.x = rollAngle;
+  rotationInputs.y = pitchAngle;
+  rotationInputs.z = yawAngle;
+
+  Coordinate legPositionOutputs[ROBOT_LEG_COUNT];
+
   if (_userDesiredMode == STANDING) {
-    computeStaticMovement(inputX, inputY, inputZ, rollAngle, pitchAngle, yawAngle);
+
+    computeStaticMovement(translationInputs, rotationInputs, legPositionOutputs);
+
     _mode = STANDING;
   }
 
@@ -345,32 +379,25 @@ void Quadruped::compute(int16_t inputX, int16_t inputY, int16_t inputZ, int16_t 
     getPitchRoll(&_measuredPitchAngle, &_measuredRollAngle);
     pitchPID.Compute();
     rollPID.Compute();
-    computeStaticMovement(0, 0, 0, _outputRollAngle, _outputPitchAngle, 0);
+
+    translationInputs.x = 0;
+    translationInputs.y = 0;
+    translationInputs.z = 0;
+    rotationInputs.x = _outputRollAngle;
+    rotationInputs.y = _outputPitchAngle;
+    rotationInputs.z = 0;
+    
+    computeStaticMovement(translationInputs, rotationInputs, legPositionOutputs);
     _mode = BALANCED_STANDING;
   }
 
   else if (_userDesiredMode == WALKING) {
-    // if (_willProvideIMUFeedback) {
-    //   getPitchRoll(&_measuredPitchAngle, &_measuredRollAngle);
-    //   pitchPID.Compute();
-    //   rollPID.Compute();
-    //   computeStaticMovement(0, 0, 0, _outputRollAngle, _outputPitchAngle, 0);
-    //   for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
-    //     legStepPlanner[leg].setNewHeight(_footPositions[leg].z);
-    //   }
-    // }
-  // for (int8_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
-  //   _footPositions[leg].x = _originFootPosition.x;
-  //   _footPositions[leg].y = _originFootPosition.y;
-  //   _footPositions[leg].z = _originFootPosition.z;
-  // }
-
-    walk(inputX, inputY);
+    walk(inputX, inputY, legPositionOutputs);
     _mode = WALKING;
-    // Serial.print("here");
   }
 
   for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+    _footPositions[leg] = legPositionOutputs[leg];
     legKinematics[leg].setFootEndpoint(_footPositions[leg].x, _footPositions[leg].y, _footPositions[leg].z);
   }
 
