@@ -116,16 +116,18 @@ void StepPlanner::updateEndpoint(int16_t newControlCoordinateX, int16_t newContr
 
 bool StepPlanner::applyStepOffset(int16_t offsetX, int16_t offsetY) {
 
-  _stepOffsetX = offsetX;
-  _stepOffsetY = offsetY;
-
   long  timeLeft = (footPosX.getDuration() - ((footPosX.getCompletion() / 100) * footPosX.getDuration()));
 
-  // Only update if the step is still ongoing
   if (timeLeft == 0) return false;
 
-  footPosX.go(_stepEndpoint.x + _stepOffsetX, timeLeft, LINEAR, ONCEFORWARD);
-  footPosY.go(_stepEndpoint.y + _stepOffsetY, timeLeft, LINEAR, ONCEFORWARD);
+  _stepEndpoint.x = _stepEndpoint.x - _stepOffsetX + offsetX;
+  _stepEndpoint.y = _stepEndpoint.y - _stepOffsetY + offsetY;
+
+  footPosX.go(_stepEndpoint.x, timeLeft, LINEAR, ONCEFORWARD);
+  footPosY.go(_stepEndpoint.y, timeLeft, LINEAR, ONCEFORWARD);
+
+  _stepOffsetX = offsetX;
+  _stepOffsetY = offsetY;
 
   return true;
 

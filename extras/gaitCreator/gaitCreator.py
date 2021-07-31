@@ -73,7 +73,7 @@ def main():
   gait_parameters.append(gait_duration)
 
   print(f"Time to create the schedule! The wizard will allow you to select an action (step = '{step_user_input}', draw back = '{draw_back_user_input}', shift = '{shift_user_input}') for each of the 4 legs for every step.")
-  print("Please note that the shift is an action for ALL the legs; it is not a step.")
+  print("Please note that the shift is an action for ALL the legs that is applied to the succeeding step. It occurs during a step.")
   print("If you forget a code, enter 'help' on any stage of the wizard.\n")
 
   # Enter in the gait
