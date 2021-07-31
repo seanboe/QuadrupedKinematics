@@ -142,28 +142,14 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY, Coo
 
     if ((millis() - _previousStepUpdate) % _gait.stepDuration != 0) _justUpdatedWalk = false;
 
+  }
+
   for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+    legStepPlanner[leg].update();
     outputFootPositions[leg].x = legStepPlanner[leg].dynamicFootPosition.x;
     outputFootPositions[leg].y = legStepPlanner[leg].dynamicFootPosition.y;
     outputFootPositions[leg].z = legStepPlanner[leg].dynamicFootPosition.z;
   }
-
-  }
-
-  for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
-    if (legStepPlanner[leg].update()) {
-      // _footPositions[leg].x += legStepPlanner[leg].dynamicFootPosition.x;
-      // _footPositions[leg].y += legStepPlanner[leg].dynamicFootPosition.y;
-      // _footPositions[leg].z += (legStepPlanner[leg].dynamicFootPosition.z) - _originFootPosition.z;
-      _footPositions[leg].x = legStepPlanner[leg].dynamicFootPosition.x;
-      _footPositions[leg].y = legStepPlanner[leg].dynamicFootPosition.y;
-      _footPositions[leg].z = (legStepPlanner[leg].dynamicFootPosition.z);
-    }
-  }
-
-  // for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
-  //   legKinematics[leg].setFootEndpoint(_footPositions[leg].x, _footPositions[leg].y, _footPositions[leg].z);
-  // }
 
 };
 
