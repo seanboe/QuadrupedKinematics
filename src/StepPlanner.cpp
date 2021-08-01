@@ -123,6 +123,9 @@ bool StepPlanner::applyStepOffset(int16_t offsetX, int16_t offsetY) {
   _stepEndpoint.x = _stepEndpoint.x - _stepOffsetX + offsetX;
   _stepEndpoint.y = _stepEndpoint.y - _stepOffsetY + offsetY;
 
+  // _stepEndpoint.x += offsetX;
+  // _stepEndpoint.y += offsetY;
+
   footPosX.go(_stepEndpoint.x, timeLeft, LINEAR, ONCEFORWARD);
   footPosY.go(_stepEndpoint.y, timeLeft, LINEAR, ONCEFORWARD);
 

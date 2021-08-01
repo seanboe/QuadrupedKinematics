@@ -15,6 +15,7 @@
 #define STEP_COUNT_INDEX            4
 #define PAUSE_DURATION_INDEX        5
 #define SCHEDULE_ACTIONS_INDEX      6
+#define MAX_STEPS                   25
 
 // Note that MINIMUM_PAUSE has a '1' prepended to it for parsing. If the number is 15, then it is actually 5.
 

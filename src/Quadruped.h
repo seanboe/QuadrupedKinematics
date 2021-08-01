@@ -17,6 +17,7 @@ typedef struct {
   int16_t stepDuration;
   int16_t stepCount;
   int16_t pauseDuration;
+  int16_t total_actions;
 } Gait;
 
 class Quadruped {
@@ -69,12 +70,13 @@ class Quadruped {
 
     // Walking
     Gait _gait;
-    int16_t _gaitSchedule[MAX_STEPS][ROBOT_LEG_COUNT];
+    int16_t _gaitSchedule[MAX_STEPS][ROBOT_LEG_COUNT];      // Make sure that max_steps is large enough!
     int16_t _currentGaitScheduleIndex;
 
     unsigned long _previousStepUpdate;
     bool _justUpdatedWalk;
     bool _firstStep;
+    bool _shouldShift;
 
 };
 

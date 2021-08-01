@@ -62,8 +62,9 @@ void Quadruped::loadGait(int16_t gaitParameters[], int16_t gaitSchedule[][ROBOT_
   _gait.stepDuration = gaitParameters[STEP_DURATION_INDEX];
   _gait.stepCount = gaitParameters[STEP_COUNT_INDEX];
   _gait.pauseDuration = gaitParameters[PAUSE_DURATION_INDEX];
+  _gait.total_actions = gaitParameters[SCHEDULE_ACTIONS_INDEX];
 
-  for (int16_t x = 0; x < _gait.stepCount; x++ ) {
+  for (int16_t x = 0; x < _gait.total_actions; x++ ) {
     for (int16_t i = 0; i < ROBOT_LEG_COUNT; i++)
       _gaitSchedule[x][i] = gaitSchedule[x][i];
   }
@@ -84,6 +85,7 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY, Coo
     _firstStep = true;
     _previousStepUpdate = millis();
     _justUpdatedWalk = false;
+    _shouldShift = false;
     _currentGaitScheduleIndex = 0;
   }
 
@@ -115,9 +117,9 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY, Coo
         stepDistance = _gait.stepDistance;
       }
 
-      if (_gaitSchedule[_currentGaitScheduleIndex][0] == SHIFT) {
-        
-      }
+      if (_gaitSchedule[_currentGaitScheduleIndex + 1][0] == SHIFT)
+        _shouldShift = true;
+
 
       for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
         switch (_gaitSchedule[_currentGaitScheduleIndex][leg]) {
@@ -128,14 +130,24 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY, Coo
             legStepPlanner[leg].requestDrawBack(controlCoordinateX, controlCoordinateY, _gait.stepDuration, drawBackDistance);
             break;
         }
+        if (_shouldShift) {
+          int16_t offsetX = _gaitSchedule[_currentGaitScheduleIndex + 1][1];
+          int16_t offsetY = _gaitSchedule[_currentGaitScheduleIndex + 1][2];
+          if (leg == 0 || leg == 3) legStepPlanner[leg].applyStepOffset(offsetX, offsetY);
+          if (leg == 1 || leg == 2) legStepPlanner[leg].applyStepOffset(offsetX, -offsetY);
+          if (leg == 3) {
+            _currentGaitScheduleIndex++;
+            _shouldShift = false;
+          }
+        }
       }
 
       _currentGaitScheduleIndex++;
-      if (_currentGaitScheduleIndex == _gait.stepCount) {
+      if (_currentGaitScheduleIndex == _gait.total_actions) {
         _currentGaitScheduleIndex = 0;
         _firstStep = false;
       }
-      
+
       _justUpdatedWalk = true;
       _previousStepUpdate = millis();
     }

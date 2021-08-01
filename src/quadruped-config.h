@@ -33,8 +33,6 @@
 #define GAIT_UPDATE_FREQUENCY   2    // The time between each update of the leg positions. Decreasing this increases the likelihood of an unfinished step or draw back. 
 // #define STANDING_TROT
 
-#define MAX_STEPS   4
-
 #define DRAW_BACK_AMPLITUDE_REDUCTION 4 // the draw back phase of the step also has an amplitude proportional to the arc amplitude. 
 
 ////////////////////////////////////////////////////////////////////
