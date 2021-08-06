@@ -1,5 +1,7 @@
 # Gait Creator !
 
+# This is outdated. Fix later
+
 step_user_input = "s"
 draw_back_user_input = "db"
 shift_user_input = "sft"

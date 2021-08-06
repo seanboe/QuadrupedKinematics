@@ -114,11 +114,14 @@ void StepPlanner::updateEndpoint(int16_t newControlCoordinateX, int16_t newContr
 }
 
 
-bool StepPlanner::applyStepOffset(int16_t offsetX, int16_t offsetY) {
+bool StepPlanner::applyStepOffset(int16_t offsetX, int16_t offsetY, int16_t shiftDuration) {
 
   long  timeLeft = (footPosX.getDuration() - ((footPosX.getCompletion() / 100) * footPosX.getDuration()));
 
-  if (timeLeft == 0) return false;
+  if (timeLeft == 0) {
+    if (shiftDuration > 0) timeLeft = shiftDuration;
+    else return false;
+  }
 
   _stepEndpoint.x = _stepEndpoint.x - _stepOffsetX + offsetX;
   _stepEndpoint.y = _stepEndpoint.y - _stepOffsetY + offsetY;

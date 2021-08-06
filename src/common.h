@@ -25,7 +25,7 @@ typedef enum {
 } MotorID;
 
 typedef enum {
-  STANDING = 0, WALKING, BALANCED_STANDING
+  STANDING = 0, BALANCED_STANDING, WALKING, BALANCED_WALKING
 } RobotMode;
 
 #endif

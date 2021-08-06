@@ -64,14 +64,36 @@
 
 #define PID_UPDATE_FREQUENCY  100     // Max 1000Hz
 
+
+// #define PITCH_KP   0.06      // 0.2 works well
+// #define PITCH_KI   0.2        // 2 works well
+// #define PITCH_KD   0.00005
+
+// // // Roll
+// #define ROLL_KP    0.03
+// #define ROLL_KI    0.19
+// #define ROLL_KD    0
+
+
+// Pitch
+#define PITCH_KP   0.14      // 0.2 works well
+#define PITCH_KI   2        // 2 works well
+#define PITCH_KD   0.0005
+
+// Roll
+#define ROLL_KP    0.28
+#define ROLL_KI    1.9
+#define ROLL_KD    0
+
+// For 125mm legs
 // // Pitch
-#define PITCH_KP   0.15
-#define PITCH_KI   2.8
-#define PITCH_KD   0
+// #define PITCH_KP   0.15
+// #define PITCH_KI   2.8
+// #define PITCH_KD   0
 
 // // Roll
-#define ROLL_KP    0.4
-#define ROLL_KI    1.8
-#define ROLL_KD    0
+// #define ROLL_KP    0.4
+// #define ROLL_KI    1.8
+// #define ROLL_KD    0
 
 #endif

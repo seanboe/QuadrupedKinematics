@@ -6,6 +6,7 @@
 #define DRAW_BACK 11
 #define SHIFT     12
 #define MINIMUM_PAUSE               15
+#define SHIFT_INDEPENDENT 13
 
 
 #define STRIDE_LENGTH_INDEX         0
@@ -16,6 +17,8 @@
 #define PAUSE_DURATION_INDEX        5
 #define SCHEDULE_ACTIONS_INDEX      6
 #define MAX_STEPS                   25
+
+#define UNIQUE_COMMAND_INDEX        0       // The index of a unique command in every step i.e. SHIFT, SHIFT_INDEPENDENT
 
 // Note that MINIMUM_PAUSE has a '1' prepended to it for parsing. If the number is 15, then it is actually 5.
 

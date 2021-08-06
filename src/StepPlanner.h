@@ -22,7 +22,7 @@ class StepPlanner {
     void requestDrawBack(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDuration, int16_t stepDistance);
     void setStepEndpoint(int16_t controlCoordinateX, int16_t controlCoordinateY, int16_t stepDistance);
     void updateEndpoint(int16_t newControlCoordinateX, int16_t newControlCoordinateY);
-    bool applyStepOffset(int16_t offsetX, int16_t offsetY);
+    bool applyStepOffset(int16_t offsetX, int16_t offsetY, int16_t shiftDuration = 0);
     bool update();
 
     void setNewHeight(int16_t newHeight);

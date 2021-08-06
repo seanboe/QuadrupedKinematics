@@ -89,7 +89,7 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY, Coo
     _currentGaitScheduleIndex = 0;
   }
 
-  if (_mode == WALKING) {
+  if (_mode == WALKING || _mode == BALANCED_WALKING) {
     if (((int16_t)(millis() - _previousStepUpdate) == (_gait.stepDuration + _gait.pauseDuration)) && _justUpdatedWalk == false) {
 
       int16_t stepDistance = 0;
@@ -117,29 +117,43 @@ void Quadruped::walk(int16_t controlCoordinateX, int16_t controlCoordinateY, Coo
         stepDistance = _gait.stepDistance;
       }
 
-      if (_gaitSchedule[_currentGaitScheduleIndex + 1][0] == SHIFT)
-        _shouldShift = true;
-
-
-      for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
-        switch (_gaitSchedule[_currentGaitScheduleIndex][leg]) {
-          case TAKE_STEP:
-            legStepPlanner[leg].requestStep(controlCoordinateX, controlCoordinateY, _gait.stepDuration, stepDistance);
-            break;
-          case DRAW_BACK:
-            legStepPlanner[leg].requestDrawBack(controlCoordinateX, controlCoordinateY, _gait.stepDuration, drawBackDistance);
-            break;
-        }
-        if (_shouldShift) {
-          int16_t offsetX = _gaitSchedule[_currentGaitScheduleIndex + 1][1];
-          int16_t offsetY = _gaitSchedule[_currentGaitScheduleIndex + 1][2];
-          if (leg == 0 || leg == 3) legStepPlanner[leg].applyStepOffset(offsetX, offsetY);
-          if (leg == 1 || leg == 2) legStepPlanner[leg].applyStepOffset(offsetX, -offsetY);
-          if (leg == 3) {
-            _currentGaitScheduleIndex++;
-            _shouldShift = false;
+      // Switch depending on the CURRENT desired action
+      switch (_gaitSchedule[_currentGaitScheduleIndex][UNIQUE_COMMAND_INDEX]) {
+        case SHIFT_INDEPENDENT:
+          for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+            int16_t offsetX = _gaitSchedule[_currentGaitScheduleIndex][UNIQUE_COMMAND_INDEX + 1];
+            int16_t offsetY = _gaitSchedule[_currentGaitScheduleIndex][UNIQUE_COMMAND_INDEX + 2];
+            if (leg == 0 || leg == 3) legStepPlanner[leg].applyStepOffset(offsetX, offsetY, _gait.stepDuration);
+            if (leg == 1 || leg == 2) legStepPlanner[leg].applyStepOffset(offsetX, -offsetY, _gait.stepDuration);
           }
-        }
+        break;
+        default:                                         // Covers the ordinary drawback/walking commands
+          for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+            switch (_gaitSchedule[_currentGaitScheduleIndex][leg]) {
+              case TAKE_STEP:
+                legStepPlanner[leg].requestStep(controlCoordinateX, controlCoordinateY, _gait.stepDuration, stepDistance);
+                break;
+              case DRAW_BACK:
+                legStepPlanner[leg].requestDrawBack(controlCoordinateX, controlCoordinateY, _gait.stepDuration, drawBackDistance);
+                break;
+            }
+          }
+          break;
+      }
+
+      // Switch depending on an AUXILLARY desired action
+      switch (_gaitSchedule[_currentGaitScheduleIndex + 1][UNIQUE_COMMAND_INDEX]) {
+        case SHIFT:
+          for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+            int16_t offsetX = _gaitSchedule[_currentGaitScheduleIndex + 1][1];
+            int16_t offsetY = _gaitSchedule[_currentGaitScheduleIndex + 1][2];
+            if (leg == 0 || leg == 3) legStepPlanner[leg].applyStepOffset(offsetX, offsetY);
+            if (leg == 1 || leg == 2) legStepPlanner[leg].applyStepOffset(offsetX, -offsetY);
+            if (leg == 3) {
+              _currentGaitScheduleIndex++;
+            }
+          }
+        break;
       }
 
       _currentGaitScheduleIndex++;
@@ -366,32 +380,62 @@ void Quadruped::compute(int16_t inputX, int16_t inputY, int16_t inputZ, int16_t 
 
   Coordinate legPositionOutputs[ROBOT_LEG_COUNT];
 
-  if (_userDesiredMode == STANDING) {
+  switch(_userDesiredMode) {
+    case STANDING:
+      computeStaticMovement(translationInputs, rotationInputs, legPositionOutputs);
+      _mode = STANDING;
+      break;
+    case BALANCED_STANDING:
+      getPitchRoll(&_measuredPitchAngle, &_measuredRollAngle);
+      pitchPID.Compute();
+      rollPID.Compute();
 
-    computeStaticMovement(translationInputs, rotationInputs, legPositionOutputs);
+      translationInputs.x = 0;
+      translationInputs.y = 0;
+      translationInputs.z = 0;
+      rotationInputs.x = _outputRollAngle;
+      rotationInputs.y = _outputPitchAngle;
+      // rotationInputs.y = 0;
+      rotationInputs.z = 0;
+      
+      computeStaticMovement(translationInputs, rotationInputs, legPositionOutputs);
+      _mode = BALANCED_STANDING;
 
-    _mode = STANDING;
-  }
+      break;
+    case WALKING:
+      walk(inputX, inputY, legPositionOutputs);
+      _mode = WALKING;
+      break;
+    case BALANCED_WALKING:
+      walk(inputX, inputY, legPositionOutputs);
 
-  else if (_userDesiredMode == BALANCED_STANDING) {
-    getPitchRoll(&_measuredPitchAngle, &_measuredRollAngle);
-    pitchPID.Compute();
-    rollPID.Compute();
+      getPitchRoll(&_measuredPitchAngle, &_measuredRollAngle);
 
-    translationInputs.x = 0;
-    translationInputs.y = 0;
-    translationInputs.z = 0;
-    rotationInputs.x = _outputRollAngle;
-    rotationInputs.y = _outputPitchAngle;
-    rotationInputs.z = 0;
-    
-    computeStaticMovement(translationInputs, rotationInputs, legPositionOutputs);
-    _mode = BALANCED_STANDING;
-  }
+      pitchPID.Compute();
+      rollPID.Compute();
 
-  else if (_userDesiredMode == WALKING) {
-    walk(inputX, inputY, legPositionOutputs);
-    _mode = WALKING;
+      translationInputs.x = 0;
+      translationInputs.y = 0;
+      translationInputs.z = 0;
+      rotationInputs.x = _outputRollAngle;
+      rotationInputs.y = _outputPitchAngle;
+      rotationInputs.z = 0;
+      
+      // Serial.print(_outputRollAngle);
+      // Serial.print(" , ");
+      // Serial.print(_outputPitchAngle);
+      // Serial.print(" , ");
+      // Serial.println(_pitchSetpoint);
+
+      Coordinate staticMovementOutput[ROBOT_LEG_COUNT];
+      computeStaticMovement(translationInputs, rotationInputs, staticMovementOutput);
+
+      for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
+        legStepPlanner[leg].setNewHeight(staticMovementOutput[leg].z);
+      }
+
+      _mode = BALANCED_WALKING;
+    break;
   }
 
   for (int16_t leg = 0; leg < ROBOT_LEG_COUNT; leg++) {
