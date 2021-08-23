@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <PID_v1.h>
+#include <simpleFusion.h>
 #include "StepPlanner.h"
 #include "Kinematics.h"
 #include "quadruped-config.h"
@@ -24,14 +25,14 @@ class Quadruped {
   public:
     Quadruped();
 
-    void init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[], bool willProvideIMUFeedback = false);
+    void init(int16_t inputX, int16_t inputY, int16_t inputZ, Motor legMotors[]);
     void setMode(RobotMode mode);
 
     void loadGait(int16_t gaitParameters[], int16_t gaitSchedule[][ROBOT_LEG_COUNT]);
     void walk(int16_t controlCoordinateX, int16_t controlCoordinateY, Coordinate outputFootPositions[ROBOT_LEG_COUNT]);
 
-    void giveIMUFeedback(double accelX, double accelY, double accelZ);
-    void getPitchRoll(double *roll, double *pitch);
+    void giveIMUFeedback(ThreeAxis &accelData, ThreeAxis &gyroData);
+    void getPitchRoll(double *pitch, double *roll);
     void setBalanceOrientation(int16_t rollEndpoint, int16_t pitchEndpoint);
     bool wantsIMUUpdate();
 
@@ -53,9 +54,9 @@ class Quadruped {
     Coordinate _originFootPosition;             // For static movement, this is what all movements are based on
 
     // Balanced Standing
-    Coordinate _IMUData;
-    Coordinate _filteredIMUData;
-    bool _willProvideIMUFeedback;   
+    ThreeAxis _accelData;
+    ThreeAxis _gyroData;
+    SimpleFusion ImuFuser;
 
     // Pitch
     PID pitchPID;
@@ -77,6 +78,19 @@ class Quadruped {
     bool _justUpdatedWalk;
     bool _firstStep;
     bool _shouldShift;
+
+    /// For PID Testing
+    uint16_t pidLoopCount = 0;
+    double pitchROC = 0;
+    double rollROC = 0;
+
+    double pitchError = 0;
+    double rollError = 0;
+
+    double previousMeasuredPitchAngle = 0;
+    double previousMeasuredRollAngle = 0;
+
+    long thispreviousTime = 0;
 
 };
 

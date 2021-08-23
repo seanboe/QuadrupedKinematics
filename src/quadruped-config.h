@@ -41,7 +41,7 @@
 
 // Maximum motor speed; milliseconds per 180 degrees factor; NOT DEGREES PER MILLISECONDS I.E. SPEED (determined experimentally) this is 0.6 sec / 180 degrees (actual value is 0.52 sec)
 // #define MAX_SPEED_INVERSE 3.5
-#define MAX_SPEED_INVERSE   20
+#define MAX_SPEED_INVERSE   15
 
 /////////////////////////////////////////////////////////////////////
 //******************* Static movement constraints *******************
@@ -59,31 +59,41 @@
 //******************* IMU Feedback + PID gains *******************
 //////////////////////////////////////////////////////////////////
 
-#define LPF_SMOOTHING_FACTOR  0.1     // The smoothing factor for the low pass filter on the imu
-#define IMU_FLIPPED                   // Uncomment this if your IMU is flipped 180 degrees (upside down)
-
+#define CF_GYRO_BIAS_PITCH    0.98
+#define CF_GYRO_BIAS_ROLL     0.98
 #define PID_UPDATE_FREQUENCY  100     // Max 1000Hz
 
 
-// #define PITCH_KP   0.06      // 0.2 works well
-// #define PITCH_KI   0.2        // 2 works well
-// #define PITCH_KD   0.00005
+// /// Error test
+// #define PITCH_KP   0      // 0.032 works well
+// #define PITCH_KI   0        //0.26 works well
+// #define PITCH_KD   0
 
-// // // Roll
-// #define ROLL_KP    0.03
-// #define ROLL_KI    0.19
+// // Roll
+// #define ROLL_KP    0   //0.03
+// #define ROLL_KI    0  // 0.19
 // #define ROLL_KD    0
+
+// Pitch
+#define PITCH_WALKING_KP   0.065
+#define PITCH_WALKING_KI   0
+#define PITCH_WALKING_KD   0.0003
+
+// Roll
+#define ROLL_WALKING_KP    0.065
+#define ROLL_WALKING_KI    0
+#define ROLL_WALKING_KD    0.0003
 
 
 // Pitch
-#define PITCH_KP   0.14      // 0.2 works well
-#define PITCH_KI   2        // 2 works well
-#define PITCH_KD   0.0005
+#define PITCH_STANDING_KP   0.01      // 0.1 works well
+#define PITCH_STANDING_KI   1.5      // 1.3 works well
+#define PITCH_STANDING_KD   0   // 0.0012 works well
 
 // Roll
-#define ROLL_KP    0.28
-#define ROLL_KI    1.9
-#define ROLL_KD    0
+#define ROLL_STANDING_KP    0.013 //0.125
+#define ROLL_STANDING_KI    1.8 //1.7
+#define ROLL_STANDING_KD    0
 
 // For 125mm legs
 // // Pitch
