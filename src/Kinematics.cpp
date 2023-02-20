@@ -41,18 +41,21 @@ void Kinematics::init(LegID legID, int16_t inputX, int16_t inputY, int16_t input
 
   // Solve for the initial foot position
   solveFootPosition(inputX, inputY, inputZ, &_motors[_indexOfMotor(_legID, M1)].angleDegrees, &_motors[_indexOfMotor(_legID, M2)].angleDegrees, &_motors[_indexOfMotor(_legID, M3)].angleDegrees);
-
+  
+  //Motor MAX Degree
+  int motorMaxDegree = 360 // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
+  
   // Motor 1
   _motors[_indexOfMotor(_legID, M1)].dynamicDegrees = _motors[_indexOfMotor(_legID, M1)].angleDegrees;
-  _motors[_indexOfMotor(_legID, M1)].previousDegrees = 360;    // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
+  _motors[_indexOfMotor(_legID, M1)].previousDegrees = motorMaxDegree;    
 
   // Motor 2
   _motors[_indexOfMotor(_legID, M2)].dynamicDegrees = _motors[_indexOfMotor(_legID, M2)].angleDegrees;
-  _motors[_indexOfMotor(_legID, M2)].previousDegrees = 360;    // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
+  _motors[_indexOfMotor(_legID, M2)].previousDegrees = motorMaxDegree;    
 
   // Motor 3
   _motors[_indexOfMotor(_legID, M3)].dynamicDegrees = _motors[_indexOfMotor(_legID, M3)].angleDegrees;
-  _motors[_indexOfMotor(_legID, M3)].previousDegrees = 360;    // 360 just needs to an angle that the motor can't be at... the motors can never achieve 360!
+  _motors[_indexOfMotor(_legID, M3)].previousDegrees = motorMaxDegree;    
 
   dynamicX.go(inputX);
   dynamicY.go(inputY);
@@ -75,7 +78,7 @@ void Kinematics::setFootEndpoint(int16_t inputX, int16_t inputY, int16_t inputZ)
 
   solveFootPosition(inputX, inputY, inputZ, &_motors[_indexOfMotor(_legID, M1)].angleDegrees, &_motors[_indexOfMotor(_legID, M2)].angleDegrees, &_motors[_indexOfMotor(_legID, M3)].angleDegrees);
 
-  // ******** Everything below is for DYNAMIC movement ********
+  // ******** Everything below is for DYNAMIC movements ********
 
   uint16_t motor1AngleDelta = abs(_motors[_indexOfMotor(_legID, M1)].angleDegrees - _motors[_indexOfMotor(_legID, M1)].previousDegrees);
   uint16_t motor2AngleDelta = abs(_motors[_indexOfMotor(_legID, M2)].angleDegrees - _motors[_indexOfMotor(_legID, M2)].previousDegrees);
@@ -136,7 +139,7 @@ void Kinematics::solveFtShldrLength(float demandFtShldr, float *demandAngle2, fl
 
 /*!
  *    @brief  Solves the angles needed to achieve a specified x-axis movement
- *    @param  inputX        The desired x-axis coordinate (mmm)
+ *    @param  inputX        The desired x-axis coordinate (mm)
  *    @param  inputZ        The desired z-axis coordinate (mm)
  *    @param  demandAngle2  Angle to hold the output for motor 2
  *    @param  demandFtShldrLength   Outputted foot shoulder length
