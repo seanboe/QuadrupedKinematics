@@ -426,32 +426,34 @@ void Quadruped::compute(int16_t inputX, int16_t inputY, int16_t inputZ, int16_t 
 
       pitchPID.Compute();
       if (rollPID.Compute()) {
-      Serial.print("Measurement: ");
-      Serial.print(_measuredPitchAngle);
-      Serial.print(" , ");
-      Serial.print("PID: ");
-      Serial.println(_outputPitchAngle);
+        // Serial.print("Measurement: ");
+        // Serial.print(_measuredPitchAngle);
+        // Serial.print(" , ");
+        // Serial.print("PID: ");
+        // Serial.println(_outputPitchAngle);
 
-      pidLoopCount ++;
-      pitchError += abs(_measuredPitchAngle);
-      rollError += abs(_measuredRollAngle);
-      pitchROC += abs((double)((_measuredPitchAngle - previousMeasuredPitchAngle) / (double)(millis() - (double)thispreviousTime)));
-      rollROC += abs((double)((_measuredRollAngle - previousMeasuredRollAngle) / (double)(millis() - (double)thispreviousTime)));
-      previousMeasuredPitchAngle = _measuredPitchAngle;
-      previousMeasuredRollAngle = _measuredRollAngle;
-      thispreviousTime = millis();
+        Serial.println(_measuredPitchAngle - previousMeasuredPitchAngle);
 
-      // if (pidLoopCount == 400) {
-      //   Serial.print("Average pitch ROC / ms: ");
-      //   Serial.print((double)(pitchROC / (double)pidLoopCount), 4);
-      //   Serial.print(" Average roll ROC / ms: ");
-      //   Serial.print((double)(rollROC / (double)pidLoopCount), 4);
-      //   Serial.print(" Pitch error: ");
-      //   Serial.print(pitchError);
-      //   Serial.print(" Roll error: ");
-      //   Serial.println(rollError);
-      //   while(1);
-      // }
+        pidLoopCount ++;
+        pitchError += abs(_measuredPitchAngle);
+        rollError += abs(_measuredRollAngle);
+        pitchROC += abs((double)((_measuredPitchAngle - previousMeasuredPitchAngle) / (double)(millis() - (double)thispreviousTime)));
+        rollROC += abs((double)((_measuredRollAngle - previousMeasuredRollAngle) / (double)(millis() - (double)thispreviousTime)));
+        previousMeasuredPitchAngle = _measuredPitchAngle;
+        previousMeasuredRollAngle = _measuredRollAngle;
+        thispreviousTime = millis();
+
+        if (pidLoopCount == 400) {
+          Serial.print("Average pitch ROC / ms: ");
+          Serial.print((double)(pitchROC / (double)pidLoopCount), 4);
+          Serial.print(" Average roll ROC / ms: ");
+          Serial.print((double)(rollROC / (double)pidLoopCount), 4);
+          Serial.print(" Pitch error: ");
+          Serial.print(pitchError);
+          Serial.print(" Roll error: ");
+          Serial.println(rollError);
+          while(1);
+        }
       };
 
       translationInputs.x = 0;
